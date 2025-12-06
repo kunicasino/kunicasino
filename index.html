@@ -1455,84 +1455,140 @@
             }
         }
         
-        // Регистрация
-        async function register() {
-            const username = document.getElementById('regUsername').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value.trim();
-            
-            if (!username || !email || !password) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (username.length < 3) {
-                showNotification('Имя пользователя должно быть не менее 3 символов', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showNotification('Пароль должен быть не менее 6 символов', 'error');
-                return;
-            }
-            
-            showLoader();
-            
-            try {
-                // 1. Регистрация в Auth
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            username: username
-                        }
-                    }
-                });
-                
-                if (authError) throw authError;
-                
-                // 2. Создание профиля в таблице users
-                const { error: profileError } = await supabase
-                    .from('users')
-                    .insert({
-                        id: authData.user.id,
-                        username: username,
-                        email: email,
-                        balance: 1000,
-                        avatar_color: getRandomColor()
-                    });
-                
-                if (profileError) {
-                    // Если ошибка при создании профиля, удаляем пользователя из auth
-                    await supabase.auth.admin.deleteUser(authData.user.id);
-                    throw profileError;
+        // Регистрация (исправленная версия)
+async function register() {
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    
+    if (!username || !email || !password) {
+        showNotification('Заполните все поля', 'error');
+        return;
+    }
+    
+    if (username.length < 3) {
+        showNotification('Имя пользователя должно быть не менее 3 символов', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showNotification('Пароль должен быть не менее 6 символов', 'error');
+        return;
+    }
+    
+    showLoader();
+    
+    try {
+        console.log('Начало регистрации для:', email);
+        
+        // 1. Проверяем, существует ли username
+        console.log('Проверка существования username:', username);
+        const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('username')
+            .eq('username', username)
+            .maybeSingle();  // Используем maybeSingle вместо single
+        
+        if (existingUser) {
+            throw new Error('Имя пользователя уже занято');
+        }
+        
+        // 2. Регистрация в Supabase Auth
+        console.log('Регистрация в Auth...');
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username: username
                 }
-                
-                showNotification('Регистрация успешна! Проверьте email для подтверждения.', 'success');
-                closeModal();
-                
-                // Автоматический вход
-                const { data: loginData } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
+            }
+        });
+        
+        if (authError) {
+            console.error('Auth error:', authError);
+            if (authError.message.includes('User already registered')) {
+                throw new Error('Пользователь с таким email уже зарегистрирован');
+            }
+            throw authError;
+        }
+        
+        if (!authData.user) {
+            throw new Error('Ошибка при создании пользователя');
+        }
+        
+        console.log('Пользователь создан в Auth, ID:', authData.user.id);
+        
+        // 3. Ждем немного, чтобы триггер сработал (если используется)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 4. Проверяем, создался ли профиль автоматически
+        console.log('Проверка создания профиля...');
+        const { data: profileCheck, error: profileCheckError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+        
+        // 5. Если профиль не создался автоматически, создаем вручную
+        if (!profileCheck || profileCheckError) {
+            console.log('Создание профиля вручную...');
+            const { error: profileError } = await supabase
+                .from('users')
+                .insert({
+                    id: authData.user.id,
+                    username: username,
+                    email: email,
+                    balance: 1000,
+                    avatar_color: getRandomColor()
                 });
+            
+            if (profileError) {
+                console.error('Profile creation error:', profileError);
                 
-                currentUser = loginData.user;
-                await loadUserProfile();
-                updateUI();
-                
-                // Очистка полей
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-                
-            } catch (error) {
-                showNotification(error.message, 'error');
-            } finally {
-                hideLoader();
+                // Проверяем тип ошибки
+                if (profileError.code === '42501') {
+                    throw new Error('Ошибка доступа. Политика RLS блокирует создание профиля.');
+                } else if (profileError.code === '23505') {
+                    throw new Error('Пользователь с таким именем или email уже существует');
+                }
+                throw new Error('Ошибка создания профиля: ' + profileError.message);
             }
         }
+        
+        console.log('Регистрация завершена успешно');
+        
+        // 6. Автоматический вход
+        console.log('Автоматический вход...');
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (loginError) {
+            console.error('Auto-login error:', loginError);
+            showNotification('Регистрация успешна! Войдите вручную.', 'success');
+        } else if (loginData.user) {
+            currentUser = loginData.user;
+            await loadUserProfile();
+            updateUI();
+            showNotification('Регистрация успешна! Добро пожаловать, ' + username + '!', 'success');
+        }
+        
+        // Очистка полей
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
+        
+        closeModal();
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification(error.message, 'error');
+    } finally {
+        hideLoader();
+    }
+}
         
         // Выход
         async function logout() {
@@ -2377,4 +2433,5 @@
     </script>
 </body>
 </html>
+
 
