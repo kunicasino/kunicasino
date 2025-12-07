@@ -18,7 +18,7 @@
             --darker-bg: #050505;
             --light-text: #ffffff;
             --dark-text: #cccccc;
-            --success: #00cc00; /* Обновлено для Mines/Plinko */
+            --success: #00cc00; /* Обновлено для Mines */
             --danger: #ff3333;
             --warning: #ffff00;
             --info: #3b82f6;
@@ -798,65 +798,6 @@
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
-
-        /* Plinko */
-        .plinko-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .plinko-board-container {
-            position: relative;
-            width: 400px;
-            height: 400px;
-            margin: 0 auto;
-            border: 2px solid var(--primary);
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-        }
-        
-        .plinko-payouts {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 10px;
-        }
-        
-        .plinko-payout-slot {
-            padding: 5px 0;
-            min-width: 30px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            border-top: 1px solid var(--dark-text);
-        }
-        
-        .plinko-peg {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--primary);
-            border-radius: 50%;
-            box-shadow: 0 0 5px var(--primary);
-        }
-        
-        .plinko-ball {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: var(--warning);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--warning);
-            transition: transform 1.5s linear; /* Плавное падение */
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 5;
-        }
         
         /* Медиа-запросы */
         @media (max-width: 1024px) {
@@ -872,7 +813,6 @@
             .modal-content { padding: 20px; }
             .user-name { max-width: 80px; }
             .mines-grid { width: 90%; max-width: 300px; height: auto; }
-            .plinko-board-container { width: 90%; height: 300px; }
         }
         
         @media (max-width: 480px) {
@@ -1143,29 +1083,6 @@
                 </div>
                 <div id="minesGrid" class="mines-grid">
                     </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="plinkoModal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content game-modal animate__animated animate__zoomIn" style="max-width: 600px;">
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-            <h3 class="modal-title" style="text-align: center; margin-bottom: 20px;">🕳️ Plinko</h3>
-            <div class="game-content">
-                <div class="plinko-controls">
-                    <input type="number" class="form-input" id="plinkoBetAmount" placeholder="Сумма ставки" value="10.00" min="1" step="0.01" style="width: 150px;">
-                    <select class="form-select" id="plinkoRows" style="width: 150px;">
-                        <option value="8">8 рядов</option>
-                        <option value="10" selected>10 рядов</option>
-                        <option value="12">12 рядов</option>
-                    </select>
-                    <button onclick="playPlinko()" id="plinkoPlayButton" class="btn btn-register">Бросить шар</button>
-                </div>
-                <div class="plinko-board-container" id="plinkoBoardContainer">
-                    <canvas id="plinkoCanvas" width="380" height="380" style="display: block; margin: 0 auto;"></canvas>
-                    <div class="plinko-payouts" id="plinkoPayouts">
-                        </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1524,7 +1441,7 @@
             { id: 1, title: 'Рулетка', icon: 'fas fa-dice-d20', minBet: 1, description: 'Ставьте на красное, черное или зеленое (x35)!' },
             { id: 2, title: 'Кости', icon: 'fas fa-dice', minBet: 1, description: 'Угадайте сумму костей: 7 (x6), 11 (x8) или Дубли (x12).' },
             { id: 3, title: 'Mines', icon: 'fas fa-bomb', minBet: 1, description: 'Находите сейфы и избегайте мин! Кэшаут в любой момент.' },
-            { id: 4, title: 'Plinko', icon: 'fas fa-dot-circle', minBet: 1, description: 'Бросьте шар и получите множитель в зависимости от того, куда он упадет.' },
+            // Игра Plinko удалена (id: 4)
         ];
 
         let currentBetAmount = 10.00;
@@ -1540,15 +1457,10 @@
             const game = games.find(g => g.id === gameId);
             const modalId = game.title;
 
-            // Используем прямой вызов модальных окон для новых игр
+            // Используем прямой вызов модальных окон для Mines
             if (game.title === 'Mines') {
                 document.getElementById('minesModal').style.display = 'flex';
                 createMinesGrid(); // Инициализация сетки при открытии
-                return;
-            }
-            if (game.title === 'Plinko') {
-                document.getElementById('plinkoModal').style.display = 'flex';
-                drawPlinkoBoard(); // Инициализация доски
                 return;
             }
 
@@ -1611,7 +1523,6 @@
                     `;
                     break;
                 case 3: // Mines (используем отдельный модал, но для полноты)
-                case 4: // Plinko (используем отдельный модал, но для полноты)
                 default:
                     container.innerHTML = `
                         <div style="text-align: center; padding: 40px 0;">
@@ -1842,16 +1753,17 @@
             initialBalance: 0 
         };
 
-        // Таблица множителей для 3 мин (для примера)
+        // Таблица множителей для 3, 5, 8 мин
         const MINES_PAYOUT_TABLES = {
             3: [1.04, 1.15, 1.34, 1.63, 2.09, 2.92, 4.41, 7.35, 13.97, 30.73, 80.00, 300.00, 1500.00, 15000.00],
             5: [1.09, 1.25, 1.48, 1.78, 2.19, 2.76, 3.65, 5.15, 7.87, 13.29, 25.00, 56.25, 157.5, 630.00],
             8: [1.17, 1.40, 1.70, 2.06, 2.54, 3.19, 4.14, 5.62, 7.95, 12.08, 19.67, 35.77, 76.54, 219.00]
-        }; // Используем 3, 5, 8 мин как примеры сложности
+        };
 
         function getMinesMultiplier(mines, clicks) {
             const table = MINES_PAYOUT_TABLES[mines] || MINES_PAYOUT_TABLES[3];
-            return table[clicks] || (table[table.length - 1] * 1.5); // Больше максимального
+            // Использование 'clicks - 1' так как массив 0-индексированный
+            return table[clicks - 1] || (table[table.length - 1] * 1.5); 
         }
 
         function generateMinesLocations(count, size) {
@@ -1937,6 +1849,8 @@
                     t.classList.add('opened');
                     if (minesState.minesLocations.includes(i)) {
                         t.innerHTML = '💣';
+                    } else if (!t.innerHTML) {
+                         t.innerHTML = '⭐';
                     }
                 });
                 
@@ -2005,163 +1919,6 @@
             document.getElementById('minesCashoutButton').disabled = true;
             document.getElementById('minesMultiplier').textContent = '1.00x';
             document.getElementById('minesNextPayout').textContent = '0.00';
-        }
-
-        // ==================== PLINKO LOGIC ====================
-
-        const PLINKO_PAYOUT_MAP = {
-            8: [16, 4, 2, 1.2, 0.8, 1.2, 2, 4, 16],
-            10: [25, 6, 3, 1.5, 1.1, 0.8, 1.1, 1.5, 3, 6, 25],
-            12: [50, 10, 4, 2, 1.3, 0.9, 0.5, 0.9, 1.3, 2, 4, 10, 50],
-        };
-        
-        const CANVAS_WIDTH = 380;
-        const PEG_RADIUS = 4;
-        const PEG_COLOR = 'var(--primary)';
-        const BALL_RADIUS = 5;
-        const BALL_COLOR = 'var(--warning)';
-
-        function drawPlinkoBoard() {
-            const canvas = document.getElementById('plinkoCanvas');
-            const ctx = canvas.getContext('2d');
-            const rows = parseInt(document.getElementById('plinkoRows').value);
-            const payoutsContainer = document.getElementById('plinkoPayouts');
-
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_WIDTH);
-            payoutsContainer.innerHTML = '';
-
-            const rowSpacing = CANVAS_WIDTH / (rows + 1);
-            const colSpacing = rowSpacing;
-
-            for (let r = 1; r <= rows; r++) {
-                const numPegs = r + 1;
-                const totalWidth = colSpacing * r;
-                const startX = (CANVAS_WIDTH - totalWidth) / 2;
-
-                for (let c = 0; c < numPegs; c++) {
-                    const x = startX + c * colSpacing;
-                    const y = r * rowSpacing;
-
-                    ctx.beginPath();
-                    ctx.arc(x, y, PEG_RADIUS, 0, Math.PI * 2, false);
-                    ctx.fillStyle = PEG_COLOR;
-                    ctx.fill();
-                }
-            }
-
-            // Рисуем корзины и выплаты
-            const payouts = PLINKO_PAYOUT_MAP[rows];
-            const numSlots = payouts.length;
-            const slotSpacing = CANVAS_WIDTH / numSlots;
-
-            for (let i = 0; i < numSlots; i++) {
-                const slotX = i * slotSpacing;
-                ctx.fillStyle = payouts[i] >= 2 ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 51, 51, 0.2)';
-                ctx.fillRect(slotX, rows * rowSpacing, slotSpacing, CANVAS_WIDTH - rows * rowSpacing);
-                
-                const payoutDiv = document.createElement('div');
-                payoutDiv.className = 'plinko-payout-slot';
-                payoutDiv.textContent = `x${payouts[i]}`;
-                payoutDiv.style.width = `${slotSpacing}px`;
-                payoutDiv.style.color = payouts[i] >= 2 ? 'var(--success)' : 'var(--danger)';
-                payoutsContainer.appendChild(payoutDiv);
-            }
-        }
-
-        async function playPlinko() {
-            if (!currentUser) return;
-            const rows = parseInt(document.getElementById('plinkoRows').value);
-            const betAmount = parseFloat(document.getElementById('plinkoBetAmount').value);
-            const playButton = document.getElementById('plinkoPlayButton');
-
-            if (isNaN(betAmount) || betAmount < 1) {
-                showNotification('Введите корректную сумму ставки.', 'warning');
-                return;
-            }
-
-            playButton.disabled = true;
-            playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ПАДЕНИЕ...';
-
-            showLoader();
-            const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
-            if (profile.balance < betAmount) {
-                showNotification('Недостаточно средств.', 'danger');
-                playButton.disabled = false;
-                playButton.innerHTML = 'Бросить шар';
-                hideLoader();
-                return;
-            }
-
-            // Списание ставки
-            let newBalance = profile.balance - betAmount;
-            const { error: deductError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-            if (deductError) {
-                showNotification('Ошибка списания ставки.', 'danger');
-                playButton.disabled = false;
-                playButton.innerHTML = 'Бросить шар';
-                hideLoader();
-                return;
-            }
-            document.getElementById('profileBalance').textContent = newBalance.toFixed(2);
-            document.getElementById('accountBalance').textContent = newBalance.toFixed(2);
-            hideLoader();
-
-            // Инициализация
-            const canvas = document.getElementById('plinkoCanvas');
-            const ctx = canvas.getContext('2d');
-            const rowSpacing = CANVAS_WIDTH / (rows + 1);
-            const colSpacing = rowSpacing;
-            const numSlots = PLINKO_PAYOUT_MAP[rows].length;
-            const slotSpacing = CANVAS_WIDTH / numSlots;
-
-            // Визуализация шара
-            const ball = document.createElement('div');
-            ball.className = 'plinko-ball';
-            document.getElementById('plinkoBoardContainer').appendChild(ball);
-
-            let currentX = CANVAS_WIDTH / 2;
-            let currentY = 0;
-            let finalCol = Math.floor(Math.random() * numSlots); // Рандомная финальная корзина
-
-            // Имитация падения
-            for (let r = 1; r <= rows; r++) {
-                const direction = Math.random() < 0.5 ? -1 : 1; // -1: влево, 1: вправо
-                currentX += direction * (colSpacing / 2); // Смещение вправо/влево на половину шага
-            }
-            
-            // Коррекция X для попадания в нужный слот
-            const targetXCenter = finalCol * slotSpacing + slotSpacing / 2;
-            const finalX = targetXCenter;
-            const finalY = CANVAS_WIDTH - BALL_RADIUS;
-
-            // Анимация шара
-            ball.style.transform = `translate(${finalX - CANVAS_WIDTH/2}px, ${finalY}px)`; // Движение
-
-            setTimeout(async () => {
-                ball.remove();
-                
-                // Расчет выигрыша
-                const multiplier = PLINKO_PAYOUT_MAP[rows][finalCol];
-                const payout = betAmount * multiplier;
-                
-                // Обновление баланса
-                const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
-                const finalBalance = profile.balance + payout;
-                
-                const { error: winError } = await supabase.from('profiles').update({ balance: finalBalance }).eq('id', currentUser.id);
-                
-                if (winError) {
-                    showNotification('Ошибка сохранения выигрыша.', 'danger');
-                } else {
-                    document.getElementById('profileBalance').textContent = finalBalance.toFixed(2);
-                    document.getElementById('accountBalance').textContent = finalBalance.toFixed(2);
-                    showNotification(`🕳️ Выигрыш x${multiplier.toFixed(2)}! Выплата: ${payout.toFixed(2)}`, multiplier >= 1 ? 'success' : 'danger');
-                }
-
-                playButton.disabled = false;
-                playButton.innerHTML = 'Бросить шар';
-
-            }, 1500); // Время анимации
         }
         
         // ==================== ПРОЧЕЕ ====================
@@ -2247,8 +2004,7 @@
                 }
             });
 
-            // Добавление обработчика для Plinko rows
-            document.getElementById('plinkoRows')?.addEventListener('change', drawPlinkoBoard);
+            // Удален обработчик для Plinko rows
         });
     </script>
 </body>
