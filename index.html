@@ -2626,20 +2626,25 @@
             document.getElementById('loader').style.display = 'none';
         }
         
-        // Показать пользовательское соглашение
-        function showTerms() {
-            document.getElementById('termsModal').style.display = 'flex';
-        }
+        // ... другие функции ...
 
-        // Закрыть пользовательское соглашение
-        function closeTerms() {
-            document.getElementById('termsModal').style.display = 'none';
-        }
+// Показать пользовательское соглашение (НОВАЯ ФУНКЦИЯ)
+function showTerms() {
+    document.getElementById('termsModal').style.display = 'flex';
+}
 
-        // Показать политику конфиденциальности
-        function showPrivacy() {
-            showNotification('Политика конфиденциальности доступна в пользовательском соглашении', 'info');
-        }
+// Закрыть пользовательское соглашение (СУЩЕСТВУЮЩАЯ ФУНКЦИЯ)
+function closeTerms() {
+    document.getElementById('termsModal').style.display = 'none';
+}
+
+// Показать политику конфиденциальности
+function showPrivacy() {
+    showNotification('Политика конфиденциальности доступна в пользовательском соглашении', 'info');
+}
+
+// ... остальная часть скрипта ...
+
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
