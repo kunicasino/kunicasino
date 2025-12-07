@@ -6,7 +6,9 @@
     <title>KuniCasino - Халява с нюансом</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         :root {
             --primary: #00ff00;
@@ -16,13 +18,10 @@
             --darker-bg: #050505;
             --light-text: #ffffff;
             --dark-text: #cccccc;
-            --success: #00ff00;
+            --success: #00cc00; /* Обновлено для Mines/Plinko */
             --danger: #ff3333;
             --warning: #ffff00;
             --info: #3b82f6;
-            --roulette-red: #ff3333;
-            --roulette-black: #000000;
-            --roulette-green: #00cc00;
         }
         
         * {
@@ -191,7 +190,6 @@
         .user-avatar {
             width: 35px;
             height: 35px;
-            /* background: var(--primary); */
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -199,8 +197,9 @@
             font-weight: bold;
             color: var(--secondary);
             font-size: 14px;
-            object-fit: cover;
-            border: 2px solid var(--primary);
+            object-fit: cover; /* Для аватарки */
+            background-color: var(--primary-dark);
+            border: 1px solid var(--primary);
         }
         
         .user-name {
@@ -472,7 +471,7 @@
             font-size: 14px;
         }
         
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
             padding: 12px;
             background: rgba(0, 0, 0, 0.7);
@@ -481,8 +480,12 @@
             color: var(--light-text);
             font-size: 14px;
         }
+
+        .form-select {
+            cursor: pointer;
+        }
         
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
@@ -543,7 +546,7 @@
             color: var(--primary);
         }
         
-        .close-modal {
+        .close-btn {
             font-size: 28px;
             color: var(--dark-text);
             cursor: pointer;
@@ -553,489 +556,342 @@
             padding: 0;
         }
         
-        .close-modal:hover {
+        .close-btn:hover {
             color: var(--primary);
         }
+
+        /* Уведомления */
+        #notificationContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .notification {
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--secondary);
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 250px;
+        }
+        .notification.success { background-color: var(--success); }
+        .notification.danger { background-color: var(--danger); }
+        .notification.warning { background-color: var(--warning); }
+        .notification.info { background-color: var(--info); }
         
-        /* Игровые анимации */
-        .game-container {
+        /* ПРОФИЛЬ */
+        .profile-content-body {
             text-align: center;
-            padding: 20px 0;
         }
-        
-        /* Стили Рулетки */
-        .roulette-container {
-            width: 250px;
-            height: 250px;
-            margin: 0 auto 25px;
-            position: relative;
-            border: 5px solid var(--light-text);
+        .profile-avatar-large {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            margin-bottom: 15px;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+            background-color: var(--primary-dark);
         }
+        .profile-nickname {
+            font-size: 28px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .profile-description {
+            color: var(--dark-text);
+            margin-bottom: 20px;
+            min-height: 30px;
+            font-style: italic;
+        }
+        .profile-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--dark-text);
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 20px;
+            color: var(--light-text);
+            font-weight: bold;
+        }
+
+        /* Игровые стили */
         
+        /* Рулетка (Обновлено) */
+        .roulette-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            border: 8px solid var(--dark-bg);
+        }
+
         .roulette-wheel {
             width: 100%;
             height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(
-                var(--roulette-green) 0deg 10deg,
-                var(--roulette-red) 10deg 25deg,
-                var(--roulette-black) 25deg 40deg,
-                var(--roulette-red) 40deg 55deg,
-                var(--roulette-black) 55deg 70deg,
-                var(--roulette-red) 70deg 85deg,
-                var(--roulette-black) 85deg 100deg,
-                var(--roulette-red) 100deg 115deg,
-                var(--roulette-black) 115deg 130deg,
-                var(--roulette-red) 130deg 145deg,
-                var(--roulette-black) 145deg 160deg,
-                var(--roulette-red) 160deg 175deg,
-                var(--roulette-black) 175deg 190deg,
-                var(--roulette-red) 190deg 205deg,
-                var(--roulette-black) 205deg 220deg,
-                var(--roulette-red) 220deg 235deg,
-                var(--roulette-black) 235deg 250deg,
-                var(--roulette-red) 250deg 265deg,
-                var(--roulette-black) 265deg 280deg,
-                var(--roulette-red) 280deg 295deg,
-                var(--roulette-black) 295deg 310deg,
-                var(--roulette-red) 310deg 325deg,
-                var(--roulette-black) 325deg 340deg,
-                var(--roulette-red) 340deg 355deg,
-                var(--roulette-green) 355deg 360deg
-            );
             position: relative;
-            transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1);
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .roulette-sector {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 0;
+            left: 50%;
+            transform-origin: 0% 100%;
+            /* Для 37 секторов: 360 / 37 ≈ 9.7297deg */
+        }
+        
+        /* Настоящий градиент с 37 секторами */
+        .roulette-wheel {
+            background: conic-gradient(
+                #00cc00 0deg 9.73deg,
+                #ff3333 9.73deg 19.46deg,
+                #000000 19.46deg 29.19deg,
+                #ff3333 29.19deg 38.92deg,
+                #000000 38.92deg 48.65deg,
+                #ff3333 48.65deg 58.38deg,
+                #000000 58.38deg 68.11deg,
+                #ff3333 68.11deg 77.84deg,
+                #000000 77.84deg 87.57deg,
+                #ff3333 87.57deg 97.3deg,
+                #000000 97.3deg 107.03deg,
+                #ff3333 107.03deg 116.76deg,
+                #000000 116.76deg 126.49deg,
+                #ff3333 126.49deg 136.22deg,
+                #000000 136.22deg 145.95deg,
+                #ff3333 145.95deg 155.68deg,
+                #000000 155.68deg 165.41deg,
+                #ff3333 165.41deg 175.14deg,
+                #000000 175.14deg 184.87deg,
+                #ff3333 184.87deg 194.6deg,
+                #000000 194.6deg 204.33deg,
+                #ff3333 204.33deg 214.06deg,
+                #000000 214.06deg 223.79deg,
+                #ff3333 223.79deg 233.52deg,
+                #000000 233.52deg 243.25deg,
+                #ff3333 243.25deg 252.98deg,
+                #000000 252.98deg 262.71deg,
+                #ff3333 262.71deg 272.44deg,
+                #000000 272.44deg 282.17deg,
+                #ff3333 282.17deg 291.9deg,
+                #000000 291.9deg 301.63deg,
+                #ff3333 301.63deg 311.36deg,
+                #000000 311.36deg 321.09deg,
+                #ff3333 321.09deg 330.82deg,
+                #000000 330.82deg 340.55deg,
+                #ff3333 340.55deg 350.28deg,
+                #000000 350.28deg 360deg
+            );
         }
         
         .roulette-pointer {
             position: absolute;
             top: -15px;
             left: 50%;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 25px solid var(--warning); /* Яркая стрелка */
             transform: translateX(-50%);
-            width: 30px;
-            height: 30px;
-            background: var(--warning);
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-            z-index: 2;
+            z-index: 10;
         }
 
-        /* Стили Костей */
-        @keyframes roll {
-            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { transform: rotateX(720deg) rotateY(720deg) rotateZ(720deg); }
-        }
-
-        .dice-container {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 25px;
-        }
-        
-        .dice {
-            width: 80px;
-            height: 80px;
-            background: var(--light-text);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease;
-        }
-
-        .dice.rolling {
-            animation: roll 1s ease-out infinite;
-        }
-
+        /* Dice */
         .dice-dot {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 15px;
+            height: 15px;
             background: var(--secondary);
             border-radius: 50%;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
-        /* Стили Mines */
-        .mines-grid-container {
+        /* Mines */
+        .mines-controls {
             display: flex;
-            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
             align-items: center;
-            gap: 15px;
-            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
-        
+
+        .mines-controls input {
+            width: 150px;
+            padding: 10px;
+            background-color: var(--darker-bg);
+            border: 1px solid var(--primary-dark);
+            color: var(--light-text);
+            border-radius: 5px;
+        }
+
+        .mines-status {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
         .mines-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr);
             gap: 5px;
-            width: 350px;
-            height: 350px;
-            border: 3px solid var(--primary);
-            border-radius: 10px;
-            padding: 5px;
-            background: rgba(0, 0, 0, 0.5);
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
         }
 
         .mines-tile {
-            background: var(--dark-bg);
-            border: 1px solid var(--primary-dark);
-            border-radius: 5px;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            border: 2px solid var(--primary);
+            color: var(--light-text);
+            font-size: 1.5em;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            transition: background 0.1s;
-            position: relative;
+            border-radius: 5px;
+            transition: background-color 0.1s;
         }
 
-        .mines-tile:not(.revealed):hover {
-            background: rgba(0, 255, 0, 0.1);
+        .mines-tile:not(.opened):hover {
+            background-color: #1a1a1a;
         }
 
-        .mines-tile.revealed {
+        .mines-tile.opened {
             cursor: default;
+            border-color: var(--dark-text);
         }
 
         .mines-tile.safe {
-            background: var(--roulette-green);
-            color: var(--secondary);
+            background-color: var(--success);
+            color: var(--dark-bg);
         }
 
-        .mines-tile.bomb {
-            background: var(--roulette-red);
+        .mines-tile.mine-hit {
+            background-color: var(--danger);
             color: var(--light-text);
-            animation: shake 0.5s;
+            animation: pulse-danger 0.5s 2;
         }
         
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+        @keyframes pulse-danger {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
-        /* Общие стили ставок */
-        .bet-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-        
-        .bet-amount {
-            font-size: 20px;
-            color: var(--primary);
-            font-weight: bold;
-            min-width: 120px;
-            text-align: center;
-        }
-        
-        .bet-btn {
-            background: var(--primary);
-            color: var(--secondary);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .bet-options {
+        /* Plinko */
+        .plinko-controls {
             display: flex;
             gap: 10px;
-            justify-content: center;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .bet-option {
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            color: var(--light-text);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .bet-option:hover {
-            background: var(--primary);
-            color: var(--secondary);
-        }
-        
-        .bet-option.active {
-            background: var(--primary);
-            color: var(--secondary);
-        }
-        
-        .game-result {
-            margin-top: 25px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 12px;
-            border: 2px solid var(--primary);
-            display: none;
-        }
-        
-        .result-text {
-            font-size: 20px;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-        
-        .result-amount {
-            font-size: 28px;
-            color: var(--warning);
-            font-weight: bold;
-        }
-        
-        /* Футер */
-        .footer {
-            background: rgba(5, 5, 5, 0.95);
-            padding: 30px 0;
-            border-top: 2px solid var(--primary);
-            margin-top: 50px;
-        }
-        
-        .footer-content {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .footer-links {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .footer-link {
-            color: var(--dark-text);
-            text-decoration: none;
-            transition: color 0.3s;
-            font-size: 14px;
-        }
-        
-        .footer-link:hover {
-            color: var(--primary);
-        }
-        
-        .copyright {
-            color: var(--dark-text);
-            font-size: 12px;
-        }
-        
-        .author-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        
-        .author-link:hover {
-            background: var(--primary);
-            color: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
-        }
-        
-        /* Уведомления */
-        .notification {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid var(--primary);
-            color: var(--light-text);
-            z-index: 3000;
-            display: none;
-            max-width: 300px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .notification.success {
-            border-color: var(--primary);
-        }
-        
-        .notification.error {
-            border-color: var(--danger);
-        }
-        
-        .notification.info {
-            border-color: var(--info);
-        }
-        
-        /* Загрузка */
-        .loader {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 4000;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .plinko-board-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
         }
         
-        .loader-spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(0, 255, 0, 0.3);
+        .plinko-payouts {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        
+        .plinko-payout-slot {
+            padding: 5px 0;
+            min-width: 30px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            border-top: 1px solid var(--dark-text);
+        }
+        
+        .plinko-peg {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
             border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s linear infinite;
+            box-shadow: 0 0 5px var(--primary);
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .plinko-ball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--warning);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--warning);
+            transition: transform 1.5s linear; /* Плавное падение */
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
         }
         
-        /* Адаптивность */
-        @media (max-width: 1200px) {
-            .games-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            }
-        }
-        
-        @media (max-width: 992px) {
-            .header-content {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .user-actions {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .hero-banner h2 {
-                font-size: 28px;
-            }
-            
-            .hero-banner p {
-                font-size: 16px;
-            }
-            
-            .bonus-highlight {
-                font-size: 18px;
-                padding: 10px 20px;
-            }
+        /* Медиа-запросы */
+        @media (max-width: 1024px) {
+            .hero-banner h2 { font-size: 32px; }
+            .bonus-highlight { font-size: 18px; padding: 10px 20px; }
         }
         
         @media (max-width: 768px) {
-            .games-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
-            
-            .account-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .balance-card {
-                min-width: 100%;
-            }
-            
-            .modal-content {
-                padding: 20px;
-            }
-            
-            .user-name {
-                max-width: 80px;
-            }
-
-            .mines-grid {
-                width: 100%;
-                max-width: 350px;
-                height: auto;
-                padding-bottom: 100%; /* trick for square grid */
-                position: relative;
-            }
-
-            .mines-grid > * {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-            }
+            .games-grid { grid-template-columns: 1fr; }
+            .footer-content { flex-direction: column; text-align: center; gap: 15px; }
+            .account-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .balance-card { min-width: 100%; }
+            .modal-content { padding: 20px; }
+            .user-name { max-width: 80px; }
+            .mines-grid { width: 90%; max-width: 300px; height: auto; }
+            .plinko-board-container { width: 90%; height: 300px; }
         }
         
         @media (max-width: 480px) {
-            .hero-banner {
-                padding: 30px 20px;
-            }
-            
-            .hero-banner h2 {
-                font-size: 24px;
-            }
-            
-            .section-title {
-                font-size: 26px;
-            }
-            
-            .user-actions {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            
-            .balance-container {
-                order: -1;
-                width: 100%;
-                justify-content: center;
-            }
+            .hero-banner { padding: 30px 20px; }
+            .hero-banner h2 { font-size: 24px; }
+            .section-title { font-size: 26px; }
+            .user-actions { flex-wrap: wrap; justify-content: center; }
+            .balance-container { order: -1; width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
-    <div class="notification" id="notification"></div>
-    
-    <div class="loader" id="loader">
+    <div id="notificationContainer"></div> 
+
+    <div class="loader" id="loader" style="display: none;"> 
         <div class="loader-spinner"></div>
         <div>Загрузка...</div>
-    </div>
-    
+    </div> 
+
     <header class="header">
         <div class="container">
             <div class="header-content">
@@ -1043,87 +899,81 @@
                     <i class="fas fa-crown"></i>
                     <h1>KUNICASINO</h1>
                 </div>
-                
                 <div class="user-actions">
                     <div class="balance-container">
                         <div class="balance-label">Баланс:</div>
                         <div class="balance-amount">
                             <i class="fas fa-coins"></i>
-                            <span id="headerBalance">0</span>
+                            <span id="profileBalance">0.00</span>
                         </div>
                     </div>
                     
-                    <div class="user-profile" id="userProfile" title="Открыть профиль" onclick="showMyProfile()">
-                        <img src="" alt="Avatar" class="user-avatar" id="userAvatar" style="display:none;">
-                        <div class="user-avatar" id="userAvatarFallback">U</div>
-                        <div class="user-name" id="userName">Гость</div>
+                    <div id="auth-buttons" style="display: flex; gap: 10px;">
+                        <button class="btn btn-login" id="loginBtn" onclick="showAuthModal('login')">Войти</button>
+                        <button class="btn btn-register" id="registerBtn" onclick="showAuthModal('register')">Регистрация</button>
                     </div>
-                    
-                    <button class="btn btn-icon" id="messagesBtn" onclick="showMessages()" title="Сообщения">
-                        <i class="fas fa-envelope"></i>
-                    </button>
-                    
-                    <button class="btn btn-icon" id="profileBtn" onclick="showMyProfile()" title="Профиль">
-                        <i class="fas fa-user"></i>
-                    </button>
-                    
-                    <button class="btn btn-login" id="loginBtn">Вход</button>
-                    <button class="btn btn-register" id="registerBtn">Регистрация</button>
+
+                    <div class="user-profile" id="user-info" style="display: none;" onclick="showProfileModal()">
+                        <img src="https://i.imgur.com/your-default-avatar.png" class="user-avatar" id="profileAvatar" alt="Аватар">
+                        <div class="user-name" id="profileNickname">Пользователь</div>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
-    
-    <main class="main-content container">
-        <section class="hero-banner">
-            <h2>KUNICASINO - ПРЕМИУМ ИГРОВАЯ ПЛАТФОРМА</h2>
-            <p>Играйте в лучшие азартные игры с мгновенными выплатами. Безопасно, надежно, честно. Присоединяйтесь к нам и получите <span class="bonus-highlight">бонус 1000 KuniCoin</span> за регистрацию!</p>
-            <button class="btn btn-register" onclick="showAuthModal('register')">Получить бонус!</button>
-        </section>
-        
-        <section class="games-section">
-            <h2 class="section-title">НАШИ ИГРЫ</h2>
-            <div class="games-grid" id="gamesGrid">
-                </div>
-        </section>
-        
-        <section class="account-section" id="accountSection">
-            <div class="account-header">
-                <h2>Личный кабинет</h2>
-                <div class="account-balance">
-                    <div class="balance-card">
-                        <div class="balance-label">Текущий баланс</div>
-                        <div class="balance-value">
-                            <i class="fas fa-coins"></i>
-                            <span id="accountBalance">0</span>
+
+    <main class="main-content">
+        <div class="container">
+            
+            <section class="hero-banner animate__animated animate__fadeIn">
+                <h2>Добро пожаловать в KuniCasino!</h2>
+                <p>Играйте в наши уникальные игры и умножайте свой виртуальный баланс.</p>
+                <div class="bonus-highlight">БОНУС: 1000.00$ при регистрации!</div>
+            </section>
+
+            <section class="games-section">
+                <h2 class="section-title">Наши игры</h2>
+                <div class="games-grid" id="gamesGrid">
+                    </div>
+            </section>
+
+            <section class="account-section" id="accountSection">
+                <h2 class="section-title">Личный кабинет</h2>
+                <div class="account-header">
+                    <div class="account-balance">
+                        <div class="balance-card">
+                            <div style="font-size: 14px; color: var(--dark-text);">Текущий баланс</div>
+                            <div class="balance-value">
+                                <i class="fas fa-coins"></i>
+                                <span id="accountBalance">0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="withdrawal-form">
-                <h3 style="color: var(--light-text); margin-bottom: 20px;">Заявка на вывод</h3>
-                <p style="color: var(--warning); margin-bottom: 20px; font-size: 14px;">Внимание: это демо-версия. Вывод средств невозможен.</p>
-                <div class="form-group">
-                    <label class="form-label" for="withdrawAmount">Сумма вывода (KuniCoin)</label>
-                    <input type="number" class="form-input" id="withdrawAmount" placeholder="Минимум 1000" min="1000">
+
+                <div class="withdrawal-form">
+                    <h4 style="color: var(--light-text); margin-bottom: 20px;">Запрос на вывод</h4>
+                    <div class="form-group">
+                        <label class="form-label">Сумма</label>
+                        <input type="number" class="form-input" id="withdrawAmount" placeholder="Введите сумму">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Реквизиты (Номер карты / Кошелек)</label>
+                        <input type="text" class="form-input" id="withdrawDetails" placeholder="Введите реквизиты">
+                    </div>
+                    <button class="btn btn-withdraw" id="withdrawBtn">
+                        <i class="fas fa-money-bill-wave"></i> ОФОРМИТЬ ВЫВОД
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="withdrawCard">Номер карты / Кошелек</label>
-                    <input type="text" class="form-input" id="withdrawCard" placeholder="Введите реквизиты">
-                </div>
-                <button class="btn btn-withdraw" id="withdrawBtn">
-                    <i class="fas fa-paper-plane"></i> ОТПРАВИТЬ ЗАЯВКУ
-                </button>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
-    
+
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="copyright">
-                    &copy; 2025 KuniCasino. Все права защищены.
+                    &copy; 2025 KuniCasino. Все права защищены. Демонстрационный сайт.
                 </div>
                 <div class="footer-links">
                     <a href="#" class="footer-link" onclick="showTerms()">Пользовательское соглашение</a>
@@ -1137,10 +987,10 @@
     </footer>
 
     <div class="modal-overlay" id="authModal">
-        <div class="modal-content">
+        <div class="modal-content animate__animated animate__fadeInDown">
             <div class="modal-header">
                 <h3 class="modal-title" id="authModalTitle">ВХОД В АККАУНТ</h3>
-                <button class="close-modal" onclick="closeModal()">&times;</button>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <div id="authForms">
                 <div id="loginForm">
@@ -1161,8 +1011,8 @@
                 </div>
                 <div id="registerForm" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label">Имя пользователя</label>
-                        <input type="text" class="form-input" id="regUsername" placeholder="Придумайте логин">
+                        <label class="form-label">Никнейм (будет виден всем)</label>
+                        <input type="text" class="form-input" id="regNickname" placeholder="Придумайте никнейм">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
@@ -1170,7 +1020,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Пароль</label>
-                        <input type="password" class="form-input" id="regPassword" placeholder="Придумайте пароль">
+                        <input type="password" class="form-input" id="regPassword" placeholder="Придумайте пароль (мин. 6 символов)">
                     </div>
                     <button class="btn btn-withdraw" onclick="register()">
                         <i class="fas fa-user-plus"></i> ЗАРЕГИСТРИРОВАТЬСЯ
@@ -1183,111 +1033,149 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="gameModal">
-        <div class="modal-content modal-game" id="gameModalContent">
-            <div class="modal-header">
-                <h3 class="modal-title" id="gameModalTitle"></h3>
-                <button class="close-modal" onclick="closeGameModal()">&times;</button>
-            </div>
-            
-            <div class="game-container" id="gameContainer">
-                </div>
-            
-            <div id="gameControls">
-                <div class="bet-controls">
-                    <button class="btn bet-btn" onclick="changeBet(-10)">-10</button>
-                    <button class="btn bet-btn" onclick="changeBet(-100)">-100</button>
-                    <span class="bet-amount" id="currentBetDisplay">Ставка: 100</span>
-                    <button class="btn bet-btn" onclick="changeBet(100)">+100</button>
-                    <button class="btn bet-btn" onclick="changeBet(10)">+10</button>
-                </div>
+    <div class="modal-overlay" id="profileModal" onclick="closeModal(event)">
+        <div class="modal-content animate__animated animate__zoomIn">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div class="profile-content-body">
+                <img src="https://i.imgur.com/your-default-avatar.png" class="profile-avatar-large" id="profileModalAvatar" alt="Аватар">
+                <div class="profile-nickname" id="profileModalNickname">Загрузка...</div>
+                <p class="profile-description" id="profileModalDescription">Загрузка...</p>
                 
-                <div class="bet-options" id="betOptions">
+                <div class="profile-stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Баланс</div>
+                        <div class="stat-value" id="profileModalBalance">0.00 <i class="fas fa-coins" style="color: var(--warning); font-size: 16px;"></i></div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Email</div>
+                        <div class="stat-value" id="profileModalEmail" style="font-size: 14px; word-break: break-all;">user@example.com</div>
+                    </div>
+                </div>
                 
-                <button class="btn btn-withdraw" id="playBtn">
-                    <i class="fas fa-play"></i> ИГРАТЬ
+                <button class="btn btn-withdraw" onclick="showEditProfileModal()" style="width: 100%; margin-bottom: 10px;">
+                    <i class="fas fa-edit"></i> Редактировать профиль
+                </button>
+                <button class="btn" onclick="logout()" style="width: 100%; background: var(--danger); color: white;">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
                 </button>
             </div>
-
-            <div class="game-result" id="gameResult">
-                <div class="result-text" id="resultText"></div>
-                <div class="result-amount" id="resultAmount"></div>
-            </div>
-
         </div>
     </div>
 
-    <div class="modal-overlay" id="profileModal">
-        <div class="modal-content">
+    <div class="modal-overlay" id="editProfileModal" onclick="closeModal(event)">
+        <div class="modal-content animate__animated animate__zoomIn">
             <div class="modal-header">
-                <h3 class="modal-title">МОЙ ПРОФИЛЬ</h3>
-                <button class="close-modal" onclick="closeProfileModal()">&times;</button>
+                <h3 class="modal-title">РЕДАКТИРОВАНИЕ ПРОФИЛЯ</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            <div id="profileDetails">
-                </div>
-            <hr style="border-color: rgba(0, 255, 0, 0.2); margin: 20px 0;">
-
-            <div class="withdrawal-form" style="padding: 20px; margin-top: 20px;">
-                <h4 style="color: var(--primary); margin-bottom: 15px;">Изменить аватар</h4>
-                <div class="form-group">
-                    <label class="form-label" for="avatarUrlInput">Ссылка на изображение (.jpg, .png)</label>
-                    <input type="url" class="form-input" id="avatarUrlInput" placeholder="https://example.com/my-avatar.png">
-                </div>
-                <button class="btn btn-withdraw" onclick="updateAvatar()">
-                    <i class="fas fa-save"></i> Сохранить аватар
-                </button>
+            <div class="form-group">
+                <label class="form-label">Никнейм (смена раз в неделю)</label>
+                <input type="text" class="form-input" id="editNicknameInput" placeholder="Новый никнейм">
+                <small id="nicknameCooldownStatus" style="color: var(--danger); font-size: 12px;"></small>
             </div>
-
-            <div class="withdrawal-form" style="padding: 20px; margin-top: 20px;">
-                <h4 style="color: var(--primary); margin-bottom: 15px;">Изменить пароль</h4>
-                <p style="color: var(--warning); font-size: 14px; margin-bottom: 15px;">На вашу почту будет отправлена ссылка для сброса пароля.</p>
-                <button class="btn" onclick="sendPasswordReset()" style="width: 100%; background: var(--info); color: white;">
-                    <i class="fas fa-lock"></i> Запросить сброс пароля
-                </button>
+            <div class="form-group">
+                <label class="form-label">Описание (будет видно всем)</label>
+                <textarea class="form-input" id="editDescriptionInput" placeholder="Напишите о себе..." rows="3"></textarea>
             </div>
+            <div class="form-group">
+                <label class="form-label">URL Аватарки (будет видно всем)</label>
+                <input type="url" class="form-input" id="editAvatarUrlInput" placeholder="https://i.imgur.com/your-image.png">
+            </div>
+            <button class="btn btn-withdraw" onclick="saveProfile()" style="width: 100%;">
+                <i class="fas fa-save"></i> Сохранить изменения
+            </button>
         </div>
     </div>
-
+    
     <div class="modal-overlay" id="messagesModal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content modal-game animate__animated animate__zoomIn">
             <div class="modal-header">
-                <h3 class="modal-title">СООБЩЕНИЯ</h3>
-                <button class="close-modal" onclick="closeMessagesModal()">&times;</button>
+                <h3 class="modal-title">МОИ СООБЩЕНИЯ</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            <div style="display: flex; gap: 20px;">
-                <div style="flex: 1; border-right: 1px solid var(--primary); padding-right: 20px; max-height: 550px; overflow-y: auto;">
-                    <h4 style="color: var(--primary); margin-bottom: 15px;">Чаты</h4>
-                    <div class="form-group">
-                        <input type="text" class="form-input" id="userSearchInput" placeholder="Поиск пользователей..." oninput="searchUsers(this.value)">
-                    </div>
-                    <div id="chatsList" style="min-height: 200px;">
-                        <p style="color: var(--dark-text); text-align: center; padding: 40px 0;">Загрузка...</p>
-                    </div>
-                </div>
-
-                <div style="flex: 2; display: flex; flex-direction: column; max-height: 550px;">
-                    <div id="chatHeader" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--primary);">
-                        <p style="color: var(--dark-text); text-align: center;">Выберите чат</p>
-                    </div>
-                    <div id="messagesList" style="flex: 1; overflow-y: auto; border: 1px solid var(--primary); padding: 10px; border-radius: 8px; margin-bottom: 15px; min-height: 300px;">
+            <div style="display: flex; height: 500px; gap: 20px;">
+                <div style="flex: 1; border-right: 1px solid var(--primary-dark); padding-right: 20px; overflow-y: auto;">
+                    <input type="text" class="form-input" id="userSearchInput" placeholder="Поиск по никнейму..." oninput="searchUsers(this.value)" style="margin-bottom: 15px;">
+                    <div id="chatsList">
                         </div>
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <input type="text" class="form-input" id="newMessage" placeholder="Введите сообщение..." disabled>
-                    </div>
-                    <button class="btn btn-withdraw" onclick="sendMessage()" disabled id="sendMessageBtn">
-                        <i class="fas fa-paper-plane"></i> Отправить
-                    </button>
+                </div>
+                
+                <div style="flex: 2; display: flex; flex-direction: column;">
+                    <div id="chatHeader" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--primary);">
+                         <p style="color: var(--dark-text); text-align: center;">Выберите чат</p>
+                    </div> 
+                    <div id="messagesList" style="flex: 1; overflow-y: auto; border: 1px solid var(--primary); padding: 10px; border-radius: 8px; margin-bottom: 15px; min-height: 300px;"> 
+                        </div> 
+                    <div class="form-group" style="margin-bottom: 10px;"> 
+                        <input type="text" class="form-input" id="newMessage" placeholder="Введите сообщение..." disabled> 
+                    </div> 
+                    <button class="btn btn-withdraw" onclick="sendMessage()" disabled id="sendMessageBtn"> 
+                        <i class="fas fa-paper-plane"></i> Отправить 
+                    </button> 
                 </div>
             </div>
         </div>
     </div>
+
+
+    <div class="modal-overlay" id="gameModal" onclick="closeGameModal(event)">
+        <div class="modal-content modal-game animate__animated animate__zoomIn">
+            <button class="close-btn" onclick="closeGameModal()">&times;</button>
+            <div id="gameContent">
+                </div>
+        </div>
+    </div>
+
+
+    <div id="minesModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content game-modal animate__animated animate__zoomIn">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h3 class="modal-title" style="text-align: center; margin-bottom: 20px;">💣 Mines (Сапер)</h3>
+            <div class="game-content">
+                <div class="mines-controls">
+                    <input type="number" id="minesBetAmount" placeholder="Сумма ставки" value="10.00" min="1" step="0.01">
+                    <input type="number" id="minesCount" placeholder="Кол-во мин (1-24)" value="3" min="1" max="24">
+                    <button id="minesStartButton" onclick="startMinesGame()" class="btn btn-register">Начать игру</button>
+                    <button id="minesCashoutButton" onclick="minesCashout()" disabled class="btn btn-login">Забрать (<span id="minesNextPayout">0.00</span>)</button>
+                </div>
+                <div class="mines-status" style="text-align: center; margin-bottom: 15px;">
+                    Множитель: <span id="minesMultiplier">1.00x</span>
+                </div>
+                <div id="minesGrid" class="mines-grid">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="plinkoModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content game-modal animate__animated animate__zoomIn" style="max-width: 600px;">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h3 class="modal-title" style="text-align: center; margin-bottom: 20px;">🕳️ Plinko</h3>
+            <div class="game-content">
+                <div class="plinko-controls">
+                    <input type="number" class="form-input" id="plinkoBetAmount" placeholder="Сумма ставки" value="10.00" min="1" step="0.01" style="width: 150px;">
+                    <select class="form-select" id="plinkoRows" style="width: 150px;">
+                        <option value="8">8 рядов</option>
+                        <option value="10" selected>10 рядов</option>
+                        <option value="12">12 рядов</option>
+                    </select>
+                    <button onclick="playPlinko()" id="plinkoPlayButton" class="btn btn-register">Бросить шар</button>
+                </div>
+                <div class="plinko-board-container" id="plinkoBoardContainer">
+                    <canvas id="plinkoCanvas" width="380" height="380" style="display: block; margin: 0 auto;"></canvas>
+                    <div class="plinko-payouts" id="plinkoPayouts">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="modal-overlay" id="termsModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ</h3>
-                <button class="close-modal" onclick="closeTerms()">&times;</button>
+                <button class="close-btn" onclick="closeTerms()">&times;</button>
             </div>
             <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
                 <p><strong>ВНИМАНИЕ: ДЕМОНСТРАЦИОННАЯ ВЕРСИЯ</strong></p>
@@ -1299,86 +1187,1037 @@
                 <p>2.1. Для доступа к полному функционалу требуется регистрация.</p>
                 <p>2.2. Пользователь обязан предоставить достоверные данные при регистрации.</p>
                 <h4>3. Виртуальная валюта</h4>
-                <p>3.1. Внутренняя валюта сайта не имеет денежной стоимости.</p>
-                <p>3.2. Вывод виртуальных средств невозможен.</p>
-                <h4>4. Ответственность</h4>
-                <p>4.1. Администрация не несет ответственности за возможные убытки.</p>
-                <p>4.2. Сайт предназначен для лиц старше 18 лет.</p>
-                <h4>5. Заключительные положения</h4>
-                <p>5.1. Администрация оставляет право изменять условия соглашения.</p>
-                <p>5.2. Использование сайта означает согласие с условиями.</p>
+                <p>3.1. Виртуальная валюта предназначена только для использования на сайте.</p>
             </div>
         </div>
     </div>
-    
+
+
     <script>
-        // ==================== КОНФИГУРАЦИЯ SUPABASE ====================
-        // !!! ВСТАВЬТЕ СВОИ ДАННЫЕ СЮДА !!!
-        const supabaseUrl = 'https://dqlfbadlpjezjrsypbmy.supabase.co'; 
-        const supabaseAnonKey = 'sb_publishable_ZyER26frXSosgCwIu1pSBQ_KAamrBXB';
-
-        // Инициализация Supabase
-        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-        // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
-        let currentUser = null;
-        let currentBet = 100;
-        let currentGame = null;
-        let currentBetType = null;
-        let currentChat = null;
+        // *********************************************************************************
+        // ******** ВАЖНО: Замените эти ключи на ваши реальные ключи Supabase ***************
+        // *********************************************************************************
+        const SUPABASE_URL = 'https://dqlfbadlpjezjrsypbmy.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_ZyER26frXSosgCwIu1pSBQ_KAamrBXB'; 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // *********************************************************************************
         
-        // Массив игр
-        const games = [
-            { id: 1, title: 'Roulette', icon: 'fas fa-dice-d20', description: 'Классическая рулетка с коэффициентами x2 (Red/Black) и x14 (Green).', minBet: 10, featured: true },
-            { id: 2, title: 'Dice', icon: 'fas fa-dice', description: 'Бросьте два кубика и угадайте сумму (7 или 11) или дубль.', minBet: 50, featured: false },
-            { id: 3, title: 'Mines', icon: 'fas fa-bomb', description: 'Раскрывайте ячейки и забирайте выигрыш, пока не наткнулись на бомбу.', minBet: 100, featured: true },
-        ];
+        let currentUser = null;
+        let lastNicknameChange = 0;
+        const NICKNAME_CHANGE_COOLDOWN = 7 * 24 * 60 * 60 * 1000; // 7 дней в миллисекундах
+        const DEFAULT_AVATAR = 'https://i.imgur.com/your-default-avatar.png'; // Дефолтная аватарка
 
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-        document.addEventListener('DOMContentLoaded', async () => {
+        // ==================== УВЕДОМЛЕНИЯ И UI ====================
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification animate__animated animate__fadeInRight ${type}`;
+            notification.textContent = message;
+
+            container.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('animate__fadeOutRight');
+                notification.addEventListener('animationend', () => {
+                    notification.remove();
+                });
+            }, 5000);
+        }
+
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return; // Игнорировать клики внутри модального окна
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        function closeGameModal(event) {
+             if (event && event.target !== event.currentTarget) return; 
+             closeModal();
+             // Дополнительная логика закрытия для игр
+             minesState.gameActive = false;
+        }
+
+        // ==================== АУТЕНТИФИКАЦИЯ И ПРОФИЛЬ ====================
+
+        async function loadProfile() {
             showLoader();
             try {
-                // Пытаемся получить текущую сессию
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { user } } = await supabase.auth.getUser();
+                currentUser = user;
 
-                if (session) {
-                    currentUser = session.user;
-                    await loadUserProfile();
+                if (currentUser) {
+                    document.getElementById('auth-buttons').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'flex';
+                    await fetchUserProfile(currentUser.id);
+                } else {
+                    document.getElementById('auth-buttons').style.display = 'flex';
+                    document.getElementById('user-info').style.display = 'none';
+                    // Сброс данных профиля
+                    document.getElementById('profileBalance').textContent = '0.00';
+                    document.getElementById('accountBalance').textContent = '0.00';
+                    document.getElementById('profileAvatar').src = DEFAULT_AVATAR;
                 }
-
-                initGames();
-                updateUI();
-                setupEventListeners();
-            } catch (error) {
-                console.error('Ошибка инициализации:', error);
-                showNotification('Ошибка загрузки приложения', 'error');
+            } catch(e) {
+                console.error("Load Profile Error:", e);
+                showNotification("Ошибка загрузки данных пользователя", 'danger');
             } finally {
                 hideLoader();
             }
-        });
-
-        // Настройка обработчиков событий
-        function setupEventListeners() {
-            document.getElementById('loginBtn').addEventListener('click', () => showAuthModal('login'));
-            document.getElementById('registerBtn').addEventListener('click', () => {
-                if (currentUser) {
-                    logout();
-                } else {
-                    showAuthModal('register');
-                }
-            });
-            document.getElementById('withdrawBtn').addEventListener('click', submitWithdrawal);
         }
 
-        // Инициализация карточек игр
-        function initGames() {
+        async function fetchUserProfile(userId) {
+            const { data: profile, error } = await supabase
+                .from('profiles') // Используем новую таблицу 'profiles'
+                .select('nickname, balance, description, avatar_url, last_nickname_change')
+                .eq('id', userId)
+                .single();
+
+            if (error && error.code === 'PGRST116') { // Запись не найдена, создать
+                await createDefaultProfile(userId, currentUser.email);
+                // Повторный запрос после создания
+                const { data: newProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+                updateProfileUI(newProfile);
+                return;
+            }
+            
+            if (error) {
+                console.error('Error fetching profile:', error);
+                showNotification('Ошибка загрузки профиля.', 'danger');
+                return;
+            }
+
+            updateProfileUI(profile);
+        }
+
+        function updateProfileUI(profile) {
+            // Обновление Header UI
+            document.getElementById('profileNickname').textContent = profile.nickname || 'Пользователь';
+            document.getElementById('profileBalance').textContent = profile.balance ? profile.balance.toFixed(2) : '0.00';
+            document.getElementById('profileAvatar').src = profile.avatar_url || DEFAULT_AVATAR;
+            
+            // Обновление Account Section
+            document.getElementById('accountBalance').textContent = profile.balance ? profile.balance.toFixed(2) : '0.00';
+
+            // Обновление Modal UI
+            document.getElementById('profileModalNickname').textContent = profile.nickname || 'Пользователь';
+            document.getElementById('profileModalBalance').textContent = profile.balance ? profile.balance.toFixed(2) : '0.00';
+            document.getElementById('profileModalEmail').textContent = currentUser.email;
+            document.getElementById('profileModalDescription').textContent = profile.description || 'Описание не заполнено.';
+            document.getElementById('profileModalAvatar').src = profile.avatar_url || DEFAULT_AVATAR;
+
+            // Сохранение данных для редактирования
+            lastNicknameChange = profile.last_nickname_change ? new Date(profile.last_nickname_change).getTime() : 0;
+            document.getElementById('editNicknameInput').value = profile.nickname || '';
+            document.getElementById('editDescriptionInput').value = profile.description || '';
+            document.getElementById('editAvatarUrlInput').value = profile.avatar_url || DEFAULT_AVATAR;
+        }
+
+        async function createDefaultProfile(userId, email) {
+            const defaultNickname = `User${Math.floor(Math.random() * 10000)}`;
+            const { error } = await supabase
+                .from('profiles')
+                .insert([{ 
+                    id: userId, 
+                    nickname: defaultNickname, 
+                    email: email, // Полезно для RLS
+                    balance: 1000.00, 
+                    description: 'Привет! Я новый пользователь.',
+                    avatar_url: DEFAULT_AVATAR,
+                    last_nickname_change: new Date().toISOString()
+                }]);
+
+            if (error) {
+                console.error('Error creating profile:', error);
+                showNotification('Ошибка создания профиля: ' + error.message, 'danger');
+            }
+        }
+        
+        // Вход
+        async function login() {
+            showLoader();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email: email, password });
+                
+                if (error) throw error;
+
+                currentUser = data.user;
+                await loadProfile();
+                showNotification('Успешный вход!', 'success');
+                closeModal();
+
+            } catch (error) {
+                let message = 'Ошибка входа.';
+                if (error.message.includes('Invalid login credentials')) {
+                    message = 'Неверный email или пароль.';
+                }
+                showNotification(message, 'danger');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        // Регистрация
+        async function register() {
+            showLoader();
+            const nickname = document.getElementById('regNickname').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+
+            if (!nickname || !email || !password) {
+                showNotification('Заполните все поля', 'warning');
+                hideLoader();
+                return;
+            }
+            if (password.length < 6) {
+                showNotification('Пароль должен быть не менее 6 символов', 'warning');
+                hideLoader();
+                return;
+            }
+
+            try {
+                // 1. Проверка уникальности никнейма
+                const { data: existingUser } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('nickname', nickname)
+                    .maybeSingle();
+
+                if (existingUser) {
+                    showNotification('Этот никнейм уже занят.', 'danger');
+                    hideLoader();
+                    return;
+                }
+
+                // 2. Регистрация в Supabase Auth
+                const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+
+                if (authError) throw authError;
+                
+                currentUser = authData.user;
+
+                // 3. Создание профиля в БД (таблица 'profiles')
+                if (currentUser) {
+                    await createDefaultProfile(currentUser.id, email);
+                }
+
+                showNotification('Регистрация успешна! Проверьте email для подтверждения.', 'success');
+                closeModal();
+                loadProfile(); // Загрузка профиля и UI
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification('Ошибка регистрации: ' + error.message, 'danger');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        // Выход
+        async function logout() {
+            showLoader();
+            await supabase.auth.signOut();
+            currentUser = null;
+            document.getElementById('user-info').style.display = 'none';
+            document.getElementById('auth-buttons').style.display = 'flex';
+            showNotification('Вы вышли из аккаунта.', 'info');
+            closeModal();
+            hideLoader();
+        }
+
+        // Показать модальное окно профиля
+        async function showProfileModal() {
+            if (!currentUser) {
+                showNotification('Войдите, чтобы посмотреть профиль.', 'warning');
+                return;
+            }
+            await fetchUserProfile(currentUser.id); // Обновляем данные перед показом
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function showEditProfileModal() {
+            if (!currentUser) return;
+            // Проверка кулдауна
+            const now = Date.now();
+            if (now - lastNicknameChange < NICKNAME_CHANGE_COOLDOWN) {
+                const remainingTime = NICKNAME_CHANGE_COOLDOWN - (now - lastNicknameChange);
+                const days = Math.ceil(remainingTime / (1000 * 60 * 60 * 24));
+                document.getElementById('nicknameCooldownStatus').textContent = `Смена никнейма будет доступна через ${days} дн.`;
+            } else {
+                document.getElementById('nicknameCooldownStatus').textContent = 'Никнейм можно изменить.';
+                document.getElementById('nicknameCooldownStatus').style.color = 'var(--success)';
+            }
+
+            document.getElementById('profileModal').style.display = 'none'; // Скрываем основной профиль
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        async function saveProfile() {
+            if (!currentUser) return;
+
+            showLoader();
+            const newNickname = document.getElementById('editNicknameInput').value.trim();
+            const newDescription = document.getElementById('editDescriptionInput').value.trim();
+            const newAvatarUrl = document.getElementById('editAvatarUrlInput').value.trim();
+            let updateData = { description: newDescription, avatar_url: newAvatarUrl };
+            let nicknameChanged = false;
+
+            // Проверка смены никнейма
+            const currentProfile = (await supabase.from('profiles').select('nickname, last_nickname_change').eq('id', currentUser.id).single()).data;
+            
+            if (newNickname !== currentProfile.nickname) {
+                const now = Date.now();
+                lastNicknameChange = new Date(currentProfile.last_nickname_change).getTime();
+
+                if (now - lastNicknameChange < NICKNAME_CHANGE_COOLDOWN) {
+                    const remainingTime = NICKNAME_CHANGE_COOLDOWN - (now - lastNicknameChange);
+                    const days = Math.ceil(remainingTime / (1000 * 60 * 60 * 24));
+                    showNotification(`Никнейм можно менять раз в 7 дней. Осталось: ${days} дн.`, 'warning');
+                    hideLoader();
+                    return;
+                }
+
+                // Проверка на уникальность
+                const { data: existingUser } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('nickname', newNickname)
+                    .maybeSingle(); // Используем maybeSingle для проверки
+
+                if (existingUser && existingUser.id !== currentUser.id) {
+                    showNotification('Этот никнейм уже занят.', 'danger');
+                    hideLoader();
+                    return;
+                }
+
+                updateData.nickname = newNickname;
+                updateData.last_nickname_change = new Date().toISOString();
+                nicknameChanged = true;
+            }
+
+            // Обновление профиля в БД
+            const { error } = await supabase
+                .from('profiles')
+                .update(updateData)
+                .eq('id', currentUser.id);
+
+            if (error) {
+                console.error('Error saving profile:', error);
+                showNotification('Ошибка сохранения профиля: ' + error.message, 'danger');
+            } else {
+                showNotification('Профиль успешно обновлен!', 'success');
+                // Обновление UI
+                if (nicknameChanged) lastNicknameChange = Date.now();
+                await fetchUserProfile(currentUser.id);
+                closeModal();
+            }
+            hideLoader();
+        }
+
+        // ==================== ИГРОВАЯ ЛОГИКА ====================
+
+        const games = [
+            { id: 1, title: 'Рулетка', icon: 'fas fa-dice-d20', minBet: 1, description: 'Ставьте на красное, черное или зеленое (x35)!' },
+            { id: 2, title: 'Кости', icon: 'fas fa-dice', minBet: 1, description: 'Угадайте сумму костей: 7 (x6), 11 (x8) или Дубли (x12).' },
+            { id: 3, title: 'Mines', icon: 'fas fa-bomb', minBet: 1, description: 'Находите сейфы и избегайте мин! Кэшаут в любой момент.' },
+            { id: 4, title: 'Plinko', icon: 'fas fa-dot-circle', minBet: 1, description: 'Бросьте шар и получите множитель в зависимости от того, куда он упадет.' },
+        ];
+
+        let currentBetAmount = 10.00;
+        let currentBetType = 'red'; // Для рулетки
+        let diceBetType = '7'; // Для костей
+
+        function openGame(gameId) {
+            if (!currentUser) {
+                showNotification('Войдите, чтобы играть!', 'warning');
+                return;
+            }
+            
+            const game = games.find(g => g.id === gameId);
+            const modalId = game.title;
+
+            // Используем прямой вызов модальных окон для новых игр
+            if (game.title === 'Mines') {
+                document.getElementById('minesModal').style.display = 'flex';
+                createMinesGrid(); // Инициализация сетки при открытии
+                return;
+            }
+            if (game.title === 'Plinko') {
+                document.getElementById('plinkoModal').style.display = 'flex';
+                drawPlinkoBoard(); // Инициализация доски
+                return;
+            }
+
+            // Для старых игр (Рулетка, Кости) используем GameModal
+            const gameModal = document.getElementById('gameModal');
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <h3 class="modal-title" style="text-align: center; margin-bottom: 20px;">${game.title}</h3>
+                <div class="game-container" id="gameContainer-${game.id}">
+                    </div>
+                <div class="bet-controls" style="margin-top: 25px;">
+                    <input type="number" class="form-input" id="gameBetAmount" value="${currentBetAmount.toFixed(2)}" min="1" step="0.01" style="width: 150px;">
+                    <button class="btn btn-register" id="playGameBtn" onclick="playGame(${game.id})"><i class="fas fa-play"></i> ИГРАТЬ</button>
+                </div>
+                <div class="bet-options" id="betOptions-${game.id}">
+                    </div>
+                <div class="game-result" id="gameResult-${game.id}" style="display: none;">
+                    <div class="result-text" id="resultText"></div>
+                    <div class="result-amount" id="resultAmount"></div>
+                </div>
+            `;
+            
+            gameModal.style.display = 'flex';
+            renderGameContent(gameId);
+        }
+
+        function renderGameContent(gameId) {
+            const container = document.getElementById(`gameContainer-${gameId}`);
+            const betOptions = document.getElementById(`betOptions-${gameId}`);
+            const game = games.find(g => g.id === gameId);
+
+            switch(gameId) {
+                case 1: // Рулетка
+                    container.innerHTML = `
+                        <div class="roulette-container">
+                            <div class="roulette-wheel" id="rouletteWheel">
+                                </div>
+                            <div class="roulette-pointer"></div>
+                        </div>
+                    `;
+                    betOptions.innerHTML = `
+                        <div class="bet-option ${currentBetType === 'red' ? 'active' : ''}" onclick="selectRouletteBet('red')">КРАСНОЕ (x2)</div>
+                        <div class="bet-option ${currentBetType === 'black' ? 'active' : ''}" onclick="selectRouletteBet('black')">ЧЕРНОЕ (x2)</div>
+                        <div class="bet-option ${currentBetType === 'green' ? 'active' : ''}" onclick="selectRouletteBet('green')" style="background-color: var(--success); color: var(--secondary); border-color: var(--success);">ЗЕЛЕНОЕ (x35)</div>
+                    `;
+                    break;
+                case 2: // Кости
+                    container.innerHTML = `
+                        <div class="dice-container">
+                            <div class="dice" id="dice1"></div>
+                            <div class="dice" id="dice2"></div>
+                        </div>
+                    `;
+                    updateDiceFace(document.getElementById('dice1'), 1);
+                    updateDiceFace(document.getElementById('dice2'), 6);
+                    betOptions.innerHTML = `
+                        <div class="bet-option ${diceBetType === '7' ? 'active' : ''}" onclick="selectDiceBetType('7')">СУММА 7 (x6)</div>
+                        <div class="bet-option ${diceBetType === '11' ? 'active' : ''}" onclick="selectDiceBetType('11')">СУММА 11 (x8)</div>
+                        <div class="bet-option ${diceBetType === 'double' ? 'active' : ''}" onclick="selectDiceBetType('double')">ДУБЛЬ (x12)</div>
+                    `;
+                    break;
+                case 3: // Mines (используем отдельный модал, но для полноты)
+                case 4: // Plinko (используем отдельный модал, но для полноты)
+                default:
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px 0;">
+                            <div style="font-size: 80px; color: var(--primary);">
+                                <i class="${game.icon}"></i>
+                            </div>
+                            <h3 style="margin: 20px 0;">${game.title}</h3>
+                            <p>Игра готова, откройте ее через отдельное окно.</p>
+                        </div>
+                    `;
+                    betOptions.innerHTML = '';
+            }
+            // Обновление ставки
+            currentBetAmount = parseFloat(document.getElementById('gameBetAmount').value);
+        }
+        
+        // --- Dice Helpers ---
+        function updateDiceFace(dice, value) {
+            dice.innerHTML = '';
+            const dots = {
+                1: [[50, 50]], 2: [[20, 20], [80, 80]], 3: [[20, 20], [50, 50], [80, 80]], 
+                4: [[20, 20], [20, 80], [80, 20], [80, 80]], 
+                5: [[20, 20], [20, 80], [50, 50], [80, 20], [80, 80]], 
+                6: [[20, 20], [20, 50], [20, 80], [80, 20], [80, 50], [80, 80]]
+            };
+            dots[value].forEach(pos => {
+                const dot = document.createElement('div');
+                dot.className = 'dice-dot';
+                dot.style.left = `${pos[0]}%`;
+                dot.style.top = `${pos[1]}%`;
+                dot.style.transform = 'translate(-50%, -50%)';
+                dice.appendChild(dot);
+            });
+        }
+        function selectDiceBetType(type) {
+            diceBetType = type;
+            document.querySelectorAll('#betOptions-2 .bet-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector(`#betOptions-2 .bet-option:contains('${type === 'double' ? 'ДУБЛЬ' : 'СУММА ' + type}')`).classList.add('active');
+        }
+
+        // --- Roulette Helpers ---
+        function selectRouletteBet(color) {
+            currentBetType = color;
+            document.querySelectorAll('#betOptions-1 .bet-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector(`#betOptions-1 .bet-option:contains('${color === 'red' ? 'КРАСНОЕ' : (color === 'black' ? 'ЧЕРНОЕ' : 'ЗЕЛЕНОЕ')}')`).classList.add('active');
+        }
+        
+        // --- Game Logic ---
+        async function playGame(gameId) {
+            const betInput = document.getElementById('gameBetAmount');
+            const betAmount = parseFloat(betInput.value);
+            const playButton = document.getElementById('playGameBtn');
+            const resultElement = document.getElementById(`gameResult-${gameId}`);
+            
+            if (isNaN(betAmount) || betAmount < 1) {
+                showNotification('Введите корректную сумму ставки.', 'warning');
+                return;
+            }
+            
+            playButton.disabled = true;
+            playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ИГРАЕМ...';
+            resultElement.style.display = 'none';
+
+            // 1. Проверка и списание баланса
+            const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
+            if (profile.balance < betAmount) {
+                showNotification('Недостаточно средств.', 'danger');
+                playButton.disabled = false;
+                playButton.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
+                return;
+            }
+            
+            // Списание
+            let newBalance = profile.balance - betAmount;
+            const { error: deductError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+            if (deductError) {
+                console.error('Deduct Error:', deductError);
+                showNotification('Ошибка списания ставки.', 'danger');
+                playButton.disabled = false;
+                playButton.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
+                return;
+            }
+            document.getElementById('profileBalance').textContent = newBalance.toFixed(2);
+            document.getElementById('accountBalance').textContent = newBalance.toFixed(2);
+            
+            let winAmount = 0;
+            let resultMessage = 'Проигрыш!';
+
+            if (gameId === 1) { // Рулетка
+                const { finalWinAmount, message } = await playRouletteLogic(betAmount);
+                winAmount = finalWinAmount;
+                resultMessage = message;
+            } else if (gameId === 2) { // Кости
+                const { finalWinAmount, message } = await playDiceLogic(betAmount);
+                winAmount = finalWinAmount;
+                resultMessage = message;
+            }
+
+            // 2. Обновление баланса после игры
+            newBalance += winAmount;
+            const { error: winError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+
+            if (winError) {
+                console.error('Win Update Error:', winError);
+                showNotification('Ошибка сохранения выигрыша.', 'danger');
+            } else {
+                document.getElementById('profileBalance').textContent = newBalance.toFixed(2);
+                document.getElementById('accountBalance').textContent = newBalance.toFixed(2);
+                showGameResult(resultElement, resultMessage, winAmount);
+                showNotification(resultMessage, winAmount > betAmount ? 'success' : (winAmount === betAmount ? 'info' : 'danger'));
+            }
+
+            // Разблокировка кнопки после завершения анимации
+            setTimeout(() => {
+                playButton.disabled = false;
+                playButton.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
+            }, gameId === 1 ? 5000 : 1000);
+        }
+
+        async function playRouletteLogic(betAmount) {
+            const ROULETTE_SECTORS = 37; // 0-36
+            const SECTOR_ANGLE = 360 / ROULETTE_SECTORS;
+            const ROULETTE_COLOR_MAP = {
+                0: 'green', 1: 'red', 2: 'black', 3: 'red', 4: 'black', 5: 'red', 6: 'black', 7: 'red', 8: 'black', 9: 'red', 10: 'black', 11: 'red', 12: 'black', 13: 'red', 14: 'black', 15: 'red', 16: 'black', 17: 'red', 18: 'black',
+                19: 'red', 20: 'black', 21: 'red', 22: 'black', 23: 'red', 24: 'black', 25: 'red', 26: 'black', 27: 'red', 28: 'black', 29: 'red', 30: 'black', 31: 'red', 32: 'black', 33: 'red', 34: 'black', 35: 'red', 36: 'black'
+            }; 
+            
+            const wheel = document.getElementById('rouletteWheel');
+            wheel.style.transition = 'none';
+            wheel.style.transform = 'rotate(0deg)';
+
+            const winningNumber = Math.floor(Math.random() * ROULETTE_SECTORS); // 0-36
+            const winningColor = ROULETTE_COLOR_MAP[winningNumber];
+            
+            // Расчет угла вращения (приземление на центр сектора с рандомным смещением)
+            // 90deg - указатель находится на 12 часов. Сектор 0 (Green) начинается с 0deg.
+            const targetSectorCenter = 360 - (winningNumber * SECTOR_ANGLE + SECTOR_ANGLE / 2);
+            // Добавляем несколько полных оборотов (4)
+            const totalRotation = 360 * 4 + targetSectorCenter + (Math.random() * 5 - 2.5); 
+            
+            // Запуск анимации
+            setTimeout(() => {
+                wheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                wheel.style.transform = `rotate(${totalRotation}deg)`;
+            }, 50);
+
+            await new Promise(resolve => setTimeout(resolve, 4000)); // Ожидание анимации
+
+            let multiplier = 0;
+            if (winningColor === currentBetType) {
+                if (winningColor === 'green') {
+                    multiplier = 36; // 1:35 + 1 (возврат ставки)
+                } else {
+                    multiplier = 2; // 1:1 + 1 (возврат ставки)
+                }
+            } else {
+                multiplier = 0;
+            }
+
+            const finalWinAmount = multiplier * betAmount; // Общая сумма к начислению (включая ставку)
+            const resultMessage = `Выпало: ${winningNumber} (${winningColor}). ${multiplier > 0 ? 'Победа!' : 'Проигрыш.'}`;
+            
+            return { finalWinAmount, message: resultMessage };
+        }
+
+        async function playDiceLogic(betAmount) {
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            
+            // Имитация броска
+            for (let i = 0; i < 10; i++) {
+                updateDiceFace(dice1, Math.floor(Math.random() * 6) + 1);
+                updateDiceFace(dice2, Math.floor(Math.random() * 6) + 1);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            // Финальный результат
+            const value1 = Math.floor(Math.random() * 6) + 1;
+            const value2 = Math.floor(Math.random() * 6) + 1;
+            const sum = value1 + value2;
+            
+            updateDiceFace(dice1, value1);
+            updateDiceFace(dice2, value2);
+
+            let winMultiplier = 0; // Коэффициент выигрыша (включая ставку)
+            let resultMessage = `Выпало: ${value1} + ${value2} = ${sum}. `;
+            
+            if (diceBetType === '7' && sum === 7) {
+                winMultiplier = 6; // 1:5 + 1
+                resultMessage += 'Победа! Сумма 7 (x6)';
+            } else if (diceBetType === '11' && sum === 11) {
+                winMultiplier = 8; // 1:7 + 1
+                resultMessage += 'Победа! Сумма 11 (x8)';
+            } else if (diceBetType === 'double' && value1 === value2) {
+                winMultiplier = 12; // 1:11 + 1
+                resultMessage += 'Победа! Дубли (x12)';
+            } else {
+                 resultMessage += 'Проигрыш.';
+            }
+
+            const finalWinAmount = winMultiplier * betAmount;
+            return { finalWinAmount, message: resultMessage };
+        }
+
+        function showGameResult(element, message, totalPayout) {
+            element.style.display = 'block';
+            element.classList.remove('animate__fadeOutUp', 'animate__fadeInDown');
+            element.classList.add('animate__fadeInDown');
+            document.getElementById('resultText').textContent = message;
+            document.getElementById('resultAmount').textContent = `Выплата: ${totalPayout.toFixed(2)}`;
+            
+            setTimeout(() => {
+                element.classList.remove('animate__fadeInDown');
+                element.classList.add('animate__fadeOutUp');
+            }, 3000);
+        }
+
+        // ==================== MINES LOGIC ====================
+
+        let minesState = {
+            gameActive: false,
+            minesLocations: [],
+            betAmount: 0,
+            minesCount: 3,
+            tilesClicked: 0,
+            currentMultiplier: 1.00,
+            gridSize: 25,
+            initialBalance: 0 
+        };
+
+        // Таблица множителей для 3 мин (для примера)
+        const MINES_PAYOUT_TABLES = {
+            3: [1.04, 1.15, 1.34, 1.63, 2.09, 2.92, 4.41, 7.35, 13.97, 30.73, 80.00, 300.00, 1500.00, 15000.00],
+            5: [1.09, 1.25, 1.48, 1.78, 2.19, 2.76, 3.65, 5.15, 7.87, 13.29, 25.00, 56.25, 157.5, 630.00],
+            8: [1.17, 1.40, 1.70, 2.06, 2.54, 3.19, 4.14, 5.62, 7.95, 12.08, 19.67, 35.77, 76.54, 219.00]
+        }; // Используем 3, 5, 8 мин как примеры сложности
+
+        function getMinesMultiplier(mines, clicks) {
+            const table = MINES_PAYOUT_TABLES[mines] || MINES_PAYOUT_TABLES[3];
+            return table[clicks] || (table[table.length - 1] * 1.5); // Больше максимального
+        }
+
+        function generateMinesLocations(count, size) {
+            const locations = new Set();
+            while (locations.size < count) {
+                locations.add(Math.floor(Math.random() * size));
+            }
+            return Array.from(locations);
+        }
+
+        function createMinesGrid() {
+            const grid = document.getElementById('minesGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < minesState.gridSize; i++) {
+                const tile = document.createElement('button');
+                tile.className = 'mines-tile';
+                tile.dataset.index = i;
+                tile.onclick = () => minesClick(i, tile);
+                grid.appendChild(tile);
+            }
+        }
+
+        async function startMinesGame() {
+            if (!currentUser) return;
+
+            minesState.betAmount = parseFloat(document.getElementById('minesBetAmount').value);
+            minesState.minesCount = parseInt(document.getElementById('minesCount').value);
+
+            if (isNaN(minesState.betAmount) || minesState.betAmount < 1) {
+                showNotification('Ставка должна быть >= 1', 'warning');
+                return;
+            }
+            if (minesState.minesCount < 1 || minesState.minesCount >= minesState.gridSize) {
+                showNotification(`Кол-во мин должно быть от 1 до ${minesState.gridSize - 1}`, 'warning');
+                return;
+            }
+
+            showLoader();
+            const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
+            if (profile.balance < minesState.betAmount) {
+                showNotification('Недостаточно средств.', 'danger');
+                hideLoader();
+                return;
+            }
+
+            // Списание ставки
+            minesState.initialBalance = profile.balance;
+            const { error: balanceError } = await supabase.from('profiles').update({ balance: profile.balance - minesState.betAmount }).eq('id', currentUser.id);
+            if (balanceError) {
+                showNotification('Ошибка списания ставки.', 'danger');
+                hideLoader();
+                return;
+            }
+            document.getElementById('profileBalance').textContent = (profile.balance - minesState.betAmount).toFixed(2);
+            document.getElementById('accountBalance').textContent = (profile.balance - minesState.betAmount).toFixed(2);
+            hideLoader();
+
+            // Инициализация игры
+            minesState.gameActive = true;
+            minesState.tilesClicked = 0;
+            minesState.currentMultiplier = 1.00;
+            minesState.minesLocations = generateMinesLocations(minesState.minesCount, minesState.gridSize);
+
+            createMinesGrid();
+            document.getElementById('minesStartButton').disabled = true;
+            document.getElementById('minesCashoutButton').disabled = false;
+            document.getElementById('minesMultiplier').textContent = '1.00x';
+            document.getElementById('minesNextPayout').textContent = '0.00';
+            showNotification(`Игра Mines начата! Ставка: ${minesState.betAmount.toFixed(2)}`, 'info');
+        }
+
+        async function minesClick(index, tile) {
+            if (!minesState.gameActive || tile.classList.contains('opened')) return;
+
+            if (minesState.minesLocations.includes(index)) {
+                // ПОРАЖЕНИЕ (Мина)
+                minesState.gameActive = false;
+                tile.classList.add('mine-hit', 'opened');
+                tile.innerHTML = '💣';
+                
+                // Открыть все мины
+                document.querySelectorAll('.mines-tile').forEach((t, i) => {
+                    t.classList.add('opened');
+                    if (minesState.minesLocations.includes(i)) {
+                        t.innerHTML = '💣';
+                    }
+                });
+                
+                showNotification(`💥 Вы проиграли! Нашли мину.`, 'danger');
+                document.getElementById('minesStartButton').disabled = false;
+                document.getElementById('minesCashoutButton').disabled = true;
+
+            } else {
+                // ПОБЕДА (Сейф)
+                minesState.tilesClicked++;
+                tile.classList.add('opened', 'safe');
+                tile.innerHTML = '⭐';
+                
+                // Обновление множителя
+                minesState.currentMultiplier = getMinesMultiplier(minesState.minesCount, minesState.tilesClicked);
+                
+                document.getElementById('minesMultiplier').textContent = `${minesState.currentMultiplier.toFixed(2)}x`;
+                const nextPayout = (minesState.betAmount * minesState.currentMultiplier).toFixed(2);
+                document.getElementById('minesNextPayout').textContent = nextPayout;
+
+                if (minesState.tilesClicked >= (minesState.gridSize - minesState.minesCount)) {
+                    await minesCashout(true); // Автоматический выигрыш
+                }
+            }
+        }
+
+        async function minesCashout(auto = false) {
+            if (!minesState.gameActive && !auto) return;
+            if (minesState.tilesClicked === 0) {
+                 showNotification('Сначала откройте хотя бы одну ячейку!', 'warning');
+                 return;
+            }
+
+            minesState.gameActive = false;
+            const payout = minesState.betAmount * minesState.currentMultiplier;
+            
+            showLoader();
+            const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
+            const newBalance = profile.balance + payout;
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ balance: newBalance })
+                .eq('id', currentUser.id);
+
+            if (updateError) {
+                showNotification('Ошибка сохранения выигрыша.', 'danger');
+            } else {
+                document.getElementById('profileBalance').textContent = newBalance.toFixed(2);
+                document.getElementById('accountBalance').textContent = newBalance.toFixed(2);
+                showNotification(`🎉 Вы забрали выигрыш: ${payout.toFixed(2)} (${minesState.currentMultiplier.toFixed(2)}x)`, 'success');
+            }
+            hideLoader();
+            
+            // Завершение UI
+            document.querySelectorAll('.mines-tile').forEach((t, i) => {
+                t.classList.add('opened');
+                if (minesState.minesLocations.includes(i) && !t.classList.contains('mine-hit')) {
+                    t.innerHTML = '💣';
+                } else if (!t.innerHTML) {
+                     t.innerHTML = '⭐';
+                }
+            });
+
+            document.getElementById('minesStartButton').disabled = false;
+            document.getElementById('minesCashoutButton').disabled = true;
+            document.getElementById('minesMultiplier').textContent = '1.00x';
+            document.getElementById('minesNextPayout').textContent = '0.00';
+        }
+
+        // ==================== PLINKO LOGIC ====================
+
+        const PLINKO_PAYOUT_MAP = {
+            8: [16, 4, 2, 1.2, 0.8, 1.2, 2, 4, 16],
+            10: [25, 6, 3, 1.5, 1.1, 0.8, 1.1, 1.5, 3, 6, 25],
+            12: [50, 10, 4, 2, 1.3, 0.9, 0.5, 0.9, 1.3, 2, 4, 10, 50],
+        };
+        
+        const CANVAS_WIDTH = 380;
+        const PEG_RADIUS = 4;
+        const PEG_COLOR = 'var(--primary)';
+        const BALL_RADIUS = 5;
+        const BALL_COLOR = 'var(--warning)';
+
+        function drawPlinkoBoard() {
+            const canvas = document.getElementById('plinkoCanvas');
+            const ctx = canvas.getContext('2d');
+            const rows = parseInt(document.getElementById('plinkoRows').value);
+            const payoutsContainer = document.getElementById('plinkoPayouts');
+
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_WIDTH);
+            payoutsContainer.innerHTML = '';
+
+            const rowSpacing = CANVAS_WIDTH / (rows + 1);
+            const colSpacing = rowSpacing;
+
+            for (let r = 1; r <= rows; r++) {
+                const numPegs = r + 1;
+                const totalWidth = colSpacing * r;
+                const startX = (CANVAS_WIDTH - totalWidth) / 2;
+
+                for (let c = 0; c < numPegs; c++) {
+                    const x = startX + c * colSpacing;
+                    const y = r * rowSpacing;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, PEG_RADIUS, 0, Math.PI * 2, false);
+                    ctx.fillStyle = PEG_COLOR;
+                    ctx.fill();
+                }
+            }
+
+            // Рисуем корзины и выплаты
+            const payouts = PLINKO_PAYOUT_MAP[rows];
+            const numSlots = payouts.length;
+            const slotSpacing = CANVAS_WIDTH / numSlots;
+
+            for (let i = 0; i < numSlots; i++) {
+                const slotX = i * slotSpacing;
+                ctx.fillStyle = payouts[i] >= 2 ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 51, 51, 0.2)';
+                ctx.fillRect(slotX, rows * rowSpacing, slotSpacing, CANVAS_WIDTH - rows * rowSpacing);
+                
+                const payoutDiv = document.createElement('div');
+                payoutDiv.className = 'plinko-payout-slot';
+                payoutDiv.textContent = `x${payouts[i]}`;
+                payoutDiv.style.width = `${slotSpacing}px`;
+                payoutDiv.style.color = payouts[i] >= 2 ? 'var(--success)' : 'var(--danger)';
+                payoutsContainer.appendChild(payoutDiv);
+            }
+        }
+
+        async function playPlinko() {
+            if (!currentUser) return;
+            const rows = parseInt(document.getElementById('plinkoRows').value);
+            const betAmount = parseFloat(document.getElementById('plinkoBetAmount').value);
+            const playButton = document.getElementById('plinkoPlayButton');
+
+            if (isNaN(betAmount) || betAmount < 1) {
+                showNotification('Введите корректную сумму ставки.', 'warning');
+                return;
+            }
+
+            playButton.disabled = true;
+            playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ПАДЕНИЕ...';
+
+            showLoader();
+            const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
+            if (profile.balance < betAmount) {
+                showNotification('Недостаточно средств.', 'danger');
+                playButton.disabled = false;
+                playButton.innerHTML = 'Бросить шар';
+                hideLoader();
+                return;
+            }
+
+            // Списание ставки
+            let newBalance = profile.balance - betAmount;
+            const { error: deductError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+            if (deductError) {
+                showNotification('Ошибка списания ставки.', 'danger');
+                playButton.disabled = false;
+                playButton.innerHTML = 'Бросить шар';
+                hideLoader();
+                return;
+            }
+            document.getElementById('profileBalance').textContent = newBalance.toFixed(2);
+            document.getElementById('accountBalance').textContent = newBalance.toFixed(2);
+            hideLoader();
+
+            // Инициализация
+            const canvas = document.getElementById('plinkoCanvas');
+            const ctx = canvas.getContext('2d');
+            const rowSpacing = CANVAS_WIDTH / (rows + 1);
+            const colSpacing = rowSpacing;
+            const numSlots = PLINKO_PAYOUT_MAP[rows].length;
+            const slotSpacing = CANVAS_WIDTH / numSlots;
+
+            // Визуализация шара
+            const ball = document.createElement('div');
+            ball.className = 'plinko-ball';
+            document.getElementById('plinkoBoardContainer').appendChild(ball);
+
+            let currentX = CANVAS_WIDTH / 2;
+            let currentY = 0;
+            let finalCol = Math.floor(Math.random() * numSlots); // Рандомная финальная корзина
+
+            // Имитация падения
+            for (let r = 1; r <= rows; r++) {
+                const direction = Math.random() < 0.5 ? -1 : 1; // -1: влево, 1: вправо
+                currentX += direction * (colSpacing / 2); // Смещение вправо/влево на половину шага
+            }
+            
+            // Коррекция X для попадания в нужный слот
+            const targetXCenter = finalCol * slotSpacing + slotSpacing / 2;
+            const finalX = targetXCenter;
+            const finalY = CANVAS_WIDTH - BALL_RADIUS;
+
+            // Анимация шара
+            ball.style.transform = `translate(${finalX - CANVAS_WIDTH/2}px, ${finalY}px)`; // Движение
+
+            setTimeout(async () => {
+                ball.remove();
+                
+                // Расчет выигрыша
+                const multiplier = PLINKO_PAYOUT_MAP[rows][finalCol];
+                const payout = betAmount * multiplier;
+                
+                // Обновление баланса
+                const profile = (await supabase.from('profiles').select('balance').eq('id', currentUser.id).single()).data;
+                const finalBalance = profile.balance + payout;
+                
+                const { error: winError } = await supabase.from('profiles').update({ balance: finalBalance }).eq('id', currentUser.id);
+                
+                if (winError) {
+                    showNotification('Ошибка сохранения выигрыша.', 'danger');
+                } else {
+                    document.getElementById('profileBalance').textContent = finalBalance.toFixed(2);
+                    document.getElementById('accountBalance').textContent = finalBalance.toFixed(2);
+                    showNotification(`🕳️ Выигрыш x${multiplier.toFixed(2)}! Выплата: ${payout.toFixed(2)}`, multiplier >= 1 ? 'success' : 'danger');
+                }
+
+                playButton.disabled = false;
+                playButton.innerHTML = 'Бросить шар';
+
+            }, 1500); // Время анимации
+        }
+        
+        // ==================== ПРОЧЕЕ ====================
+        
+        function showLoader() {
+             document.getElementById('loader').style.display = 'flex';
+        }
+        
+        function hideLoader() {
+             document.getElementById('loader').style.display = 'none';
+        }
+
+        function showAuthModal(form) {
+            document.getElementById('authModalTitle').textContent = form === 'login' ? 'ВХОД В АККАУНТ' : 'РЕГИСТРАЦИЯ';
+            document.getElementById('loginForm').style.display = form === 'login' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = form === 'register' ? 'block' : 'none';
+            document.getElementById('authModal').style.display = 'flex';
+        }
+
+        function showLoginForm() {
+             showAuthModal('login');
+        }
+
+        function showRegisterForm() {
+             showAuthModal('register');
+        }
+        
+        function submitWithdrawal() {
+             showNotification('Функционал вывода временно отключен в демо-версии.', 'warning');
+        }
+
+        function showTerms() {
+             document.getElementById('termsModal').style.display = 'flex';
+        }
+        
+        function closeTerms() {
+             document.getElementById('termsModal').style.display = 'none';
+        }
+        
+        function showPrivacy() {
+             showNotification('Политика конфиденциальности доступна в пользовательском соглашении', 'info');
+        }
+
+        function showMessages() {
+             showNotification('Функционал чатов в разработке.', 'warning');
+        }
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Инициализация игр
             const gamesGrid = document.getElementById('gamesGrid');
-            gamesGrid.innerHTML = '';
             games.forEach(game => {
                 const gameCard = document.createElement('div');
                 gameCard.className = `game-card ${game.featured ? 'featured' : ''}`;
                 gameCard.innerHTML = `
-                    ${game.featured ? '<div class="featured-badge">ХИТ</div>' : ''}
                     <div class="game-header">
                         <div class="game-icon">
                             <i class="${game.icon}"></i>
@@ -1386,7 +2225,7 @@
                         <h3 class="game-title">${game.title}</h3>
                         <div class="game-stats">
                             <span><i class="fas fa-coins"></i> мин. ${game.minBet}</span>
-                            <span><i class="fas fa-trophy"></i> до x${game.id === 3 ? '∞' : game.id === 1 ? '14' : '12'}</span>
+                            <span><i class="fas fa-trophy"></i> Высокий множитель</span>
                         </div>
                     </div>
                     <div class="game-body">
@@ -1398,1319 +2237,18 @@
                 `;
                 gamesGrid.appendChild(gameCard);
             });
-        }
-
-        // Обновление интерфейса
-        function updateUI() {
-            // Сбрасываем все
-            document.getElementById('userProfile').style.display = 'none';
-            document.getElementById('profileBtn').style.display = 'inline-block';
-            document.getElementById('messagesBtn').style.display = 'inline-block';
-            document.getElementById('loginBtn').style.display = 'inline-block';
-            document.getElementById('registerBtn').style.display = 'inline-block';
-            document.getElementById('registerBtn').innerHTML = 'Регистрация';
-            document.getElementById('registerBtn').onclick = () => showAuthModal('register');
-            document.getElementById('accountSection').classList.remove('active');
             
-            if (currentUser) {
-                // Показываем профиль
-                document.getElementById('userProfile').style.display = 'flex';
-                document.getElementById('userName').textContent = currentUser.username || 'Пользователь';
-                
-                // Аватар
-                const avatar = document.getElementById('userAvatar');
-                const fallback = document.getElementById('userAvatarFallback');
-                const avatar_url = currentUser.avatar_url;
+            loadProfile(); // Загрузка профиля
 
-                if (avatar_url) {
-                    avatar.src = avatar_url;
-                    avatar.style.display = 'block';
-                    fallback.style.display = 'none';
-                } else {
-                    fallback.textContent = (currentUser.username || 'U').charAt(0).toUpperCase();
-                    fallback.style.background = currentUser.avatar_color || '#00ff00';
-                    avatar.style.display = 'none';
-                    fallback.style.display = 'flex';
-                }
-
-                // Обновляем баланс
-                document.getElementById('headerBalance').textContent = currentUser.balance || 0;
-                document.getElementById('accountBalance').textContent = currentUser.balance || 0;
-
-                // Показываем личный кабинет
-                document.getElementById('accountSection').classList.add('active');
-
-                // Меняем кнопки
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('registerBtn').innerHTML = '<i class="fas fa-sign-out-alt"></i> Выход';
-                document.getElementById('registerBtn').onclick = logout;
-            } else {
-                // Гость
-                document.getElementById('headerBalance').textContent = 0;
-            }
-        }
-
-        // ==================== АВТОРИЗАЦИЯ И ПРОФИЛЬ ====================
-        function getRandomColor() {
-            const colors = ['#00ff00', '#3b82f6', '#ff3333', '#ffff00', '#ff00ff', '#00ffff'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // Загрузка профиля пользователя
-        async function loadUserProfile() {
-            if (!currentUser) return;
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .maybeSingle();
-
-                if (error) {
-                    console.error('Ошибка загрузки профиля:', error);
-                    return;
-                }
-
-                if (data) {
-                    // Объединяем данные пользователя
-                    currentUser = { 
-                        ...currentUser, 
-                        ...data,
-                        username: data.username || currentUser.user_metadata.username,
-                        avatar_url: data.avatar_url || null
-                    };
-                } else {
-                    // Если профиль не найден (например, при регистрации через email/pass, если RLS блокирует), создаем.
-                    await ensureUserProfile();
-                    await loadUserProfile(); // Повторная попытка
-                }
-            } catch (error) {
-                console.error('Ошибка в loadUserProfile:', error);
-            }
-        }
-
-        // Убедиться, что профиль существует (для новых пользователей)
-        async function ensureUserProfile() {
-            if (!currentUser) return;
-            const { data } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', currentUser.id)
-                .maybeSingle();
-
-            if (!data) {
-                // Создаем профиль в таблице users
-                console.log('Создание профиля при первом входе...');
-                const { error: profileError } = await supabase
-                    .from('users')
-                    .insert({ 
-                        id: currentUser.id, 
-                        username: currentUser.user_metadata.username || 'Пользователь', 
-                        email: currentUser.email, 
-                        balance: 1000, 
-                        avatar_color: getRandomColor() 
-                    });
-                
-                if (profileError) {
-                    console.error('Profile creation error:', profileError);
-                }
-            }
-        }
-
-        // Показать модальное окно авторизации
-        function showAuthModal(type = 'login') {
-            document.getElementById('authModal').style.display = 'flex';
-            if (type === 'register') {
-                showRegisterForm();
-            } else {
-                showLoginForm();
-            }
-        }
-
-        function showLoginForm() {
-            document.getElementById('authModalTitle').textContent = 'ВХОД В АККАУНТ';
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        }
-
-        function showRegisterForm() {
-            document.getElementById('authModalTitle').textContent = 'СОЗДАНИЕ АККАУНТА';
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-        }
-
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-
-        // Вход
-        async function login() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-
-            if (!email || !password) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-
-            showLoader();
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email.toLowerCase(),
-                    password
-                });
-
-                if (error) {
-                    if (error.message.includes('Invalid login credentials')) {
-                        throw new Error('Неверный email или пароль.');
-                    }
-                    throw error;
-                }
-
-                if (data.user) {
-                    currentUser = data.user;
-                    await ensureUserProfile();
-                    await loadUserProfile();
-                    showNotification('Успешный вход!', 'success');
+            // Обработка нажатия ESC для закрытия модальных окон
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
                     closeModal();
-                    updateUI();
-                    document.getElementById('loginEmail').value = '';
-                    document.getElementById('loginPassword').value = '';
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showNotification(error.message, 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // Регистрация
-        async function register() {
-            const username = document.getElementById('regUsername').value.trim();
-            const email = document.getElementById('regEmail').value.trim().toLowerCase();
-            const password = document.getElementById('regPassword').value.trim();
-
-            // Валидация
-            if (!username || !email || !password) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            if (username.length < 3) {
-                showNotification('Имя пользователя должно быть не менее 3 символов', 'error');
-                return;
-            }
-            if (password.length < 6) {
-                showNotification('Пароль должен быть не менее 6 символов', 'error');
-                return;
-            }
-            if (!validateEmail(email)) {
-                showNotification('Введите корректный email', 'error');
-                return;
-            }
-
-            showLoader();
-            try {
-                // 1. Проверяем, существует ли имя пользователя
-                const { data: existingUsername } = await supabase
-                    .from('users')
-                    .select('username')
-                    .eq('username', username)
-                    .maybeSingle();
-                
-                if (existingUsername) {
-                    throw new Error('Имя пользователя уже занято. Выберите другое.');
-                }
-                
-                // 2. Регистрация в Supabase Auth
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            username: username
-                        }
-                    }
-                });
-
-                if (authError) throw authError;
-
-                if (!authData.user) {
-                    throw new Error('Ошибка при создании пользователя');
-                }
-
-                // 3. Создаем профиль в таблице users
-                const { error: profileError } = await supabase
-                    .from('users')
-                    .insert({ 
-                        id: authData.user.id, 
-                        username: username, 
-                        email: email, 
-                        balance: 1000, 
-                        avatar_color: getRandomColor()
-                    });
-
-                if (profileError) {
-                     // Если RLS блокирует, создадим при первом входе (ensureUserProfile)
-                    console.warn('Profile creation error (handled by ensureUserProfile):', profileError);
-                }
-
-                showNotification('Регистрация успешна! Теперь войдите в систему.', 'success'); 
-                
-                // Показываем форму входа
-                showLoginForm();
-                
-                // 4. Очистка и закрытие
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-                closeModal();
-
-            } catch (error) {
-                console.error('Registration error:', error);
-                showNotification(error.message, 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // Выход
-        async function logout() {
-            showLoader();
-            try {
-                await supabase.auth.signOut();
-                currentUser = null;
-                currentChat = null;
-                showNotification('Вы вышли из системы', 'success');
-                updateUI();
-            } catch (error) {
-                showNotification('Ошибка при выходе', 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // ==================== ПРОФИЛЬ И НАСТРОЙКИ ====================
-
-        // Показать модальное окно профиля
-        function showMyProfile() {
-            if (!currentUser) {
-                showNotification('Войдите в систему, чтобы увидеть профиль', 'info');
-                return;
-            }
-
-            const modal = document.getElementById('profileModal');
-            const detailsDiv = document.getElementById('profileDetails');
-
-            detailsDiv.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <div style="position: relative;">
-                        <img src="${currentUser.avatar_url || ''}" alt="Avatar" class="user-avatar" 
-                            style="display: ${currentUser.avatar_url ? 'block' : 'none'}; width: 60px; height: 60px; border: 3px solid var(--primary);" id="profileAvatarImg">
-                        <div class="user-avatar" id="profileAvatarFallback" 
-                            style="display: ${!currentUser.avatar_url ? 'flex' : 'none'}; width: 60px; height: 60px; font-size: 24px; background: ${currentUser.avatar_color || '#00ff00'};">
-                            ${(currentUser.username || 'U').charAt(0).toUpperCase()}
-                        </div>
-                    </div>
-                    <div>
-                        <div style="font-size: 24px; color: var(--light-text); font-weight: bold; margin-bottom: 5px;">${currentUser.username || 'Пользователь'}</div>
-                        <div style="color: var(--dark-text); font-size: 14px;">${currentUser.email}</div>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; padding: 15px; border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.4);">
-                    <div>
-                        <div style="color: var(--dark-text); font-size: 12px;">Баланс</div>
-                        <div style="color: var(--primary); font-size: 20px; font-weight: bold;">${currentUser.balance || 0}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--dark-text); font-size: 12px;">ID</div>
-                        <div style="color: var(--light-text); font-size: 12px; word-break: break-all;">${currentUser.id.substring(0, 8)}...</div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('avatarUrlInput').value = currentUser.avatar_url || '';
-            modal.style.display = 'flex';
-        }
-
-        // Обновить аватар
-        async function updateAvatar() {
-            if (!currentUser) return;
-            const avatarUrl = document.getElementById('avatarUrlInput').value.trim();
-
-            showLoader();
-            try {
-                const { error } = await supabase
-                    .from('users')
-                    .update({ avatar_url: avatarUrl || null })
-                    .eq('id', currentUser.id);
-
-                if (error) throw error;
-                
-                // Обновляем локальный объект
-                currentUser.avatar_url = avatarUrl || null;
-
-                showNotification('Аватар успешно обновлен!', 'success');
-                // Перезагружаем UI
-                updateUI();
-                showMyProfile();
-
-            } catch (error) {
-                console.error('Update avatar error:', error);
-                showNotification('Ошибка при обновлении аватара', 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // Отправить запрос на сброс пароля
-        async function sendPasswordReset() {
-            if (!currentUser) return;
-            showLoader();
-            try {
-                const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email, {
-                    redirectTo: window.location.origin, // Редирект на текущий сайт после сброса
-                });
-                if (error) throw error;
-                showNotification('Ссылка для сброса пароля отправлена на ваш email!', 'success');
-            } catch (error) {
-                console.error('Reset password error:', error);
-                showNotification('Ошибка: Не удалось отправить ссылку для сброса', 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // ==================== ИГРЫ: ОБЩАЯ ЛОГИКА ====================
-        
-        // Открыть модальное окно игры
-        function openGame(gameId) {
-            if (!currentUser) {
-                showNotification('Для игры необходимо войти в систему', 'error');
-                return;
-            }
-            const game = games.find(g => g.id === gameId);
-            if (!game) return;
-            
-            currentGame = game;
-            currentBetType = null;
-            currentBet = game.minBet;
-            
-            // Сброс и отображение модалки
-            document.getElementById('gameModalTitle').textContent = game.title.toUpperCase();
-            document.getElementById('gameResult').style.display = 'none';
-            document.getElementById('gameModalContent').style.maxWidth = game.id === 3 ? '800px' : '500px'; 
-            document.getElementById('gameModal').style.display = 'flex';
-            document.getElementById('playBtn').disabled = false;
-            document.getElementById('playBtn').innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
-
-            // Инициализация UI для конкретной игры
-            const container = document.getElementById('gameContainer');
-            const betOptions = document.getElementById('betOptions');
-            const playBtn = document.getElementById('playBtn');
-
-            switch (gameId) {
-                case 1: // Roulette
-                    container.innerHTML = `
-                        <div class="roulette-container">
-                            <div class="roulette-wheel" id="rouletteWheel"></div>
-                            <div class="roulette-pointer"></div>
-                        </div>
-                    `;
-                    betOptions.innerHTML = `
-                        <div class="bet-option ${currentBetType === 'green' ? 'active' : ''}" onclick="selectBetType('green', this)">GREEN (x14)</div>
-                        <div class="bet-option ${currentBetType === 'red' ? 'active' : ''}" onclick="selectBetType('red', this)">RED (x2)</div>
-                        <div class="bet-option ${currentBetType === 'black' ? 'active' : ''}" onclick="selectBetType('black', this)">BLACK (x2)</div>
-                    `;
-                    playBtn.onclick = playRoulette;
-                    break;
-                case 2: // Dice
-                    container.innerHTML = `
-                        <div class="dice-container">
-                            <div class="dice" id="dice1"></div>
-                            <div class="dice" id="dice2"></div>
-                        </div>
-                    `;
-                    updateDiceFace(document.getElementById('dice1'), 1);
-                    updateDiceFace(document.getElementById('dice2'), 6);
-                    betOptions.innerHTML = `
-                        <div class="bet-option" onclick="selectBetType('7', this)">СУММА 7 (x6)</div>
-                        <div class="bet-option" onclick="selectBetType('11', this)">СУММА 11 (x8)</div>
-                        <div class="bet-option" onclick="selectBetType('double', this)">ДУБЛЬ (x12)</div>
-                    `;
-                    playBtn.onclick = playDice;
-                    break;
-                case 3: // Mines
-                    // Инициализация полей для Mines
-                    container.innerHTML = `
-                        <div style="display: flex; gap: 30px; align-items: flex-start; justify-content: center; width: 100%;">
-                            <div class="mines-grid-container">
-                                <div id="minesGrid" class="mines-grid"></div>
-                                <div id="minesGameStats" style="text-align: left; width: 100%;">
-                                    <p>Бомб: <span id="minesCountDisplay">3</span></p>
-                                    <p>Множитель: <span id="minesMultiplier">1.00x</span></p>
-                                    <p>Выигрыш: <span id="minesWin">0</span></p>
-                                </div>
-                            </div>
-                            <div id="minesControls" style="min-width: 150px;">
-                                <div class="form-group">
-                                    <label class="form-label">Кол-во бомб</label>
-                                    <select class="form-input" id="minesSelector" onchange="resetMinesGame()">
-                                        <option value="3">3</option>
-                                        <option value="5">5</option>
-                                        <option value="8">8</option>
-                                        <option value="12">12</option>
-                                    </select>
-                                </div>
-                                <button class="btn btn-withdraw" style="background: var(--warning); margin-bottom: 10px;" onclick="cashOutMines()" id="minesCashOutBtn" disabled>
-                                    <i class="fas fa-money-bill-wave"></i> ЗАБРАТЬ
-                                </button>
-                                <button class="btn btn-withdraw" style="background: var(--danger);" onclick="resetMinesGame()" id="minesResetBtn">
-                                    <i class="fas fa-redo"></i> СБРОС
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    // Скрываем общие контролы, т.к. у Mines свои
-                    document.getElementById('gameControls').style.display = 'none';
-                    document.getElementById('currentBetDisplay').textContent = `Ставка: ${currentBet}`;
-
-                    playBtn.onclick = startGameMines;
-                    startGameMines(true); // Инициализация
-                    return; // Выходим, чтобы не выполнить общую логику Mines
-                default:
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px 0;">
-                            <div style="font-size: 80px; color: var(--primary);">
-                                <i class="${game.icon}"></i>
-                            </div>
-                            <h3 style="margin: 20px 0;">${game.title}</h3>
-                            <p>Игра в разработке. Скоро будет доступна!</p>
-                        </div>
-                    `;
-                    betOptions.innerHTML = '';
-                    playBtn.onclick = () => showNotification('Игра в разработке!', 'info');
-            }
-
-            // Показываем общие контролы для Рулетки и Костей
-            document.getElementById('gameControls').style.display = 'block';
-            document.getElementById('currentBetDisplay').textContent = `Ставка: ${currentBet}`;
-            
-            // Устанавливаем минимальную ставку
-            if (currentBet < currentGame.minBet) {
-                currentBet = currentGame.minBet;
-            }
-        }
-
-        // Выбор типа ставки
-        function selectBetType(type, element) {
-            currentBetType = type;
-            // Обновляем активные кнопки
-            document.querySelectorAll('.bet-option').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            element.classList.add('active');
-        }
-
-        // Изменение ставки
-        function changeBet(amount) {
-            const newBet = currentBet + amount;
-            const minBet = currentGame ? currentGame.minBet : 100;
-            const maxBet = currentUser ? currentUser.balance : 0;
-            
-            if (newBet >= minBet && newBet <= maxBet) {
-                currentBet = newBet;
-            } else if (newBet < minBet) {
-                currentBet = minBet;
-                showNotification(`Минимальная ставка: ${minBet}`, 'error');
-            } else if (newBet > maxBet) {
-                currentBet = maxBet;
-                showNotification('Недостаточно средств!', 'error');
-            }
-
-            document.getElementById('currentBetDisplay').textContent = `Ставка: ${currentBet}`;
-        }
-
-        // Показать результат игры
-        async function showGameResult(multiplier) {
-            const resultDiv = document.getElementById('gameResult');
-            const resultText = document.getElementById('resultText');
-            const resultAmount = document.getElementById('resultAmount');
-            const bet = currentBet;
-            const winAmount = bet * multiplier;
-
-            // Обновляем баланс в БД
-            await updateBalance(winAmount - bet); 
-
-            resultDiv.style.display = 'block';
-
-            if (multiplier > 0) {
-                // Выигрыш
-                resultText.textContent = 'ПОБЕДА!';
-                resultText.style.color = 'var(--primary)';
-                resultAmount.textContent = `+${winAmount.toFixed(2)}`;
-                resultAmount.style.color = 'var(--warning)';
-                resultDiv.style.borderColor = 'var(--primary)';
-            } else {
-                // Проигрыш
-                resultText.textContent = 'ПРОИГРЫШ!';
-                resultText.style.color = 'var(--danger)';
-                resultAmount.textContent = `-${bet.toFixed(2)}`;
-                resultAmount.style.color = 'var(--danger)';
-                resultDiv.style.borderColor = 'var(--danger)';
-            }
-            
-            // Обновляем UI
-            updateUI();
-        }
-
-        // Обновление баланса в БД
-        async function updateBalance(change) {
-            if (!currentUser) return;
-
-            const newBalance = (currentUser.balance || 0) + change;
-            
-            const { error } = await supabase
-                .from('users')
-                .update({ balance: newBalance })
-                .eq('id', currentUser.id);
-
-            if (error) {
-                console.error('Ошибка обновления баланса:', error);
-                showNotification('Ошибка обновления баланса', 'error');
-                return false;
-            }
-
-            // Обновляем локальный баланс
-            currentUser.balance = newBalance;
-            return true;
-        }
-
-        // ==================== ИГРЫ: РУЛЕТКА ====================
-
-        function playRoulette() {
-            if (!currentBetType) {
-                showNotification('Выберите цвет для ставки!', 'error');
-                return;
-            }
-            if (!currentUser || currentUser.balance < currentBet) {
-                showNotification('Недостаточно средств на балансе!', 'error');
-                return;
-            }
-
-            const playBtn = document.getElementById('playBtn');
-            playBtn.disabled = true;
-            document.getElementById('gameResult').style.display = 'none';
-
-            // Уменьшаем баланс на сумму ставки
-            updateBalance(-currentBet);
-            updateUI();
-
-            // Логика выигрыша: 1 из 37 секторов (1 зелёный, 18 красных, 18 чёрных)
-            const winningNumber = Math.floor(Math.random() * 37); // 0 (Green) to 36
-            let resultColor;
-
-            if (winningNumber === 0) {
-                resultColor = 'green';
-            } else if (winningNumber % 2 === 0) {
-                resultColor = 'red';
-            } else {
-                resultColor = 'black';
-            }
-
-            // Рассчитываем итоговый угол для остановки.
-            // Каждый сектор 360/37 ≈ 9.73 градуса.
-            // Центр зеленого сектора 0: 360/37 * 0 + 360/37 * 0.5 ≈ 4.86.
-            // Центр сектора N: (360/37) * N + 360/37 * 0.5
-            let targetDegree = (360 / 37) * (winningNumber) + (360 / 37) * 0.5;
-            
-            // Рулетка вращается 6 полных кругов + угол остановки
-            const spin = 6 * 360;
-            const finalDegree = spin + (360 - targetDegree); // Учитываем, что рулетка вращается против часовой
-            
-            const wheel = document.getElementById('rouletteWheel');
-            wheel.style.transition = 'none';
-            wheel.style.transform = 'rotate(0deg)';
-            
-            // Даем браузеру перерисовать (reset)
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)';
-                    wheel.style.transform = `rotate(${finalDegree}deg)`;
-                });
-            });
-
-            // Проверка результата через 4 секунды
-            setTimeout(async () => {
-                let winMultiplier = 0;
-                if (currentBetType === resultColor) {
-                    winMultiplier = resultColor === 'green' ? 14 : 2;
-                }
-                await showGameResult(winMultiplier);
-                playBtn.disabled = false;
-                playBtn.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
-            }, 4100);
-        }
-
-        // ==================== ИГРЫ: КОСТИ ====================
-        function updateDiceFace(dice, value) {
-            dice.innerHTML = '';
-            // Матрица расположения точек для каждой грани (в процентах от 0 до 100)
-            const dots = {
-                1: [[50, 50]],
-                2: [[20, 20], [80, 80]],
-                3: [[20, 20], [50, 50], [80, 80]],
-                4: [[20, 20], [20, 80], [80, 20], [80, 80]],
-                5: [[20, 20], [20, 80], [50, 50], [80, 20], [80, 80]],
-                6: [[20, 20], [20, 80], [50, 20], [50, 80], [80, 20], [80, 80]] 
-            };
-            
-            dots[value].forEach(pos => {
-                const dot = document.createElement('div');
-                dot.className = 'dice-dot';
-                dot.style.left = `${pos[0]}%`;
-                dot.style.top = `${pos[1]}%`;
-                dot.style.transform = 'translate(-50%, -50%)';
-                dice.appendChild(dot);
-            });
-        }
-
-        function playDice() {
-            if (!currentBetType) {
-                showNotification('Выберите тип ставки!', 'error');
-                return;
-            }
-            if (!currentUser || currentUser.balance < currentBet) {
-                showNotification('Недостаточно средств на балансе!', 'error');
-                return;
-            }
-
-            const playBtn = document.getElementById('playBtn');
-            playBtn.disabled = true;
-            document.getElementById('gameResult').style.display = 'none';
-
-            // Уменьшаем баланс на сумму ставки
-            updateBalance(-currentBet);
-            updateUI();
-            
-            const dice1El = document.getElementById('dice1');
-            const dice2El = document.getElementById('dice2');
-
-            // Запускаем анимацию
-            dice1El.classList.add('rolling');
-            dice2El.classList.add('rolling');
-
-            // Генерируем результат
-            const value1 = Math.floor(Math.random() * 6) + 1;
-            const value2 = Math.floor(Math.random() * 6) + 1;
-            const sum = value1 + value2;
-
-            // Останавливаем анимацию и показываем результат через 1 секунду
-            setTimeout(async () => {
-                dice1El.classList.remove('rolling');
-                dice2El.classList.remove('rolling');
-                
-                updateDiceFace(dice1El, value1);
-                updateDiceFace(dice2El, value2);
-
-                let winMultiplier = 0;
-                
-                if (currentBetType === '7' && sum === 7) {
-                    winMultiplier = 6;
-                } else if (currentBetType === '11' && sum === 11) {
-                    winMultiplier = 8;
-                } else if (currentBetType === 'double' && value1 === value2) {
-                    winMultiplier = 12;
-                }
-
-                await showGameResult(winMultiplier);
-                playBtn.disabled = false;
-                playBtn.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
-            }, 1000);
-        }
-
-        // ==================== ИГРЫ: MINES ====================
-
-        let minesState = {
-            isGameActive: false,
-            board: [],
-            revealedCount: 0,
-            minesCount: 3,
-            maxTiles: 25,
-            currentMultiplier: 1.00,
-            bet: 0,
-            safeTileMultipliers: [1.00, 1.15, 1.35, 1.60, 1.90, 2.30, 2.80, 3.45, 4.30, 5.40, 6.90, 8.85, 11.50, 15.00, 19.80, 26.50, 36.00, 50.00, 75.00, 120.00, 200.00, 350.00]
-        };
-
-        function resetMinesGame() {
-            if (minesState.isGameActive) {
-                if (!confirm("Вы уверены, что хотите сбросить игру и потерять текущий выигрыш?")) {
-                    return;
-                }
-            }
-            startGameMines(true);
-        }
-
-        function startGameMines(isReset = false) {
-            const betInput = document.getElementById('currentBetDisplay');
-            const playBtn = document.getElementById('playBtn');
-            const cashOutBtn = document.getElementById('minesCashOutBtn');
-            const minesSelector = document.getElementById('minesSelector');
-
-            // Если не сброс, ищем кнопку "Играть"
-            if (!isReset) {
-                // Проверка ставки и баланса
-                minesState.bet = currentBet;
-                if (!currentUser || currentUser.balance < minesState.bet) {
-                    showNotification('Недостаточно средств на балансе!', 'error');
-                    return;
-                }
-
-                // Уменьшаем баланс на сумму ставки
-                updateBalance(-minesState.bet);
-                updateUI();
-
-                minesState.isGameActive = true;
-                playBtn.style.display = 'none';
-                cashOutBtn.disabled = true; // Сначала нельзя вывести
-            } else {
-                minesState.isGameActive = false;
-                playBtn.style.display = 'block';
-                cashOutBtn.disabled = true;
-                document.getElementById('gameResult').style.display = 'none';
-            }
-            
-            // Инициализация
-            minesState.minesCount = parseInt(minesSelector.value);
-            minesState.revealedCount = 0;
-            minesState.currentMultiplier = 1.00;
-            
-            // Создание доски с бомбами
-            minesState.board = Array(minesState.maxTiles).fill(false);
-            const bombIndices = [];
-            while (bombIndices.length < minesState.minesCount) {
-                const index = Math.floor(Math.random() * minesState.maxTiles);
-                if (!bombIndices.includes(index)) {
-                    bombIndices.push(index);
-                }
-            }
-            bombIndices.forEach(i => minesState.board[i] = true);
-
-            updateMinesUI();
-        }
-
-        function getMinesMultiplier(safeTiles, mines) {
-            if (safeTiles === 0) return 1.00;
-            const key = `${safeTiles}-${mines}`;
-
-            // Приближенные коэффициенты для 5x5 (25 плиток)
-            const multipliers = {
-                // 3 мины
-                '1-3': 1.09, '2-3': 1.22, '3-3': 1.39, '4-3': 1.61, '5-3': 1.92, '6-3': 2.37, '7-3': 3.06, '8-3': 4.19, '9-3': 6.07,
-                // 5 мин
-                '1-5': 1.25, '2-5': 1.56, '3-5': 2.08, '4-5': 2.97, '5-5': 4.54, '6-5': 7.62, '7-5': 14.28, '8-5': 31.25, '9-5': 83.33,
-                // 8 мин
-                '1-8': 1.56, '2-8': 2.60, '3-8': 4.79, '4-8': 9.94, '5-8': 24.85, '6-8': 74.55, '7-8': 372.75, 
-                // 12 мин
-                '1-12': 2.30, '2-12': 5.75, '3-12': 18.40, '4-12': 80.50, '5-12': 503.13, 
-            };
-
-            return multipliers[key] || (safeTiles > 0 ? (1.0 + safeTiles * 0.1 * (mines / 3)) : 1.00); 
-        }
-
-        async function clickTile(index) {
-            if (!minesState.isGameActive) {
-                showNotification('Нажмите "ИГРАТЬ" для начала!', 'error');
-                return;
-            }
-
-            const tile = document.getElementById(`minesTile-${index}`);
-            if (tile.classList.contains('revealed')) return;
-
-            if (minesState.board[index]) {
-                // БОМБА
-                minesState.isGameActive = false;
-                tile.classList.add('bomb');
-                tile.innerHTML = '<i class="fas fa-skull"></i>';
-
-                document.getElementById('minesCashOutBtn').disabled = true;
-                document.getElementById('playBtn').style.display = 'block';
-                document.getElementById('playBtn').textContent = 'НАЧАТЬ НОВУЮ ИГРУ';
-                
-                // Раскрываем все бомбы
-                for (let i = 0; i < minesState.maxTiles; i++) {
-                    const t = document.getElementById(`minesTile-${i}`);
-                    if (minesState.board[i]) {
-                        t.classList.add('bomb');
-                        t.innerHTML = '<i class="fas fa-skull"></i>';
-                    } else {
-                        t.classList.add('revealed');
-                        t.classList.add('safe');
-                        t.innerHTML = '<i class="fas fa-star"></i>';
-                        t.style.opacity = 0.5;
-                    }
-                    t.onclick = null;
-                }
-
-                await showGameResult(0); // Проигрыш
-            } else {
-                // БЕЗОПАСНАЯ ЯЧЕЙКА
-                minesState.revealedCount++;
-                tile.classList.add('revealed', 'safe');
-                tile.innerHTML = '<i class="fas fa-star"></i>';
-                tile.onclick = null;
-
-                // Обновляем множитель
-                const newMultiplier = getMinesMultiplier(minesState.revealedCount, minesState.minesCount);
-                minesState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
-
-                document.getElementById('minesCashOutBtn').disabled = false;
-
-                // Проверка на победу (раскрыты все безопасные ячейки)
-                if (minesState.revealedCount === minesState.maxTiles - minesState.minesCount) {
-                    minesState.isGameActive = false;
-                    document.getElementById('minesCashOutBtn').disabled = true;
-                    await cashOutMines(true); // Автоматический вывод при 100%
-                    showNotification('Поздравляем! Вы раскрыли все безопасные ячейки!', 'success');
-                }
-            }
-            updateMinesUI();
-        }
-
-        async function cashOutMines(isFullWin = false) {
-            if (!minesState.isGameActive && !isFullWin) return;
-            minesState.isGameActive = false;
-            
-            const winAmount = minesState.bet * minesState.currentMultiplier;
-
-            document.getElementById('minesCashOutBtn').disabled = true;
-            document.getElementById('playBtn').style.display = 'block';
-            document.getElementById('playBtn').textContent = 'НАЧАТЬ НОВУЮ ИГРУ';
-
-            // Раскрываем все бомбы
-            for (let i = 0; i < minesState.maxTiles; i++) {
-                const t = document.getElementById(`minesTile-${i}`);
-                t.onclick = null;
-                if (minesState.board[i] && !t.classList.contains('bomb')) {
-                    t.classList.add('bomb');
-                    t.innerHTML = '<i class="fas fa-skull"></i>';
-                    t.style.opacity = 0.5;
-                }
-            }
-
-            // Победитель: множитель = currentMultiplier
-            await showGameResult(minesState.currentMultiplier);
-        }
-
-        function updateMinesUI() {
-            const grid = document.getElementById('minesGrid');
-            grid.innerHTML = '';
-            
-            minesState.board.forEach((isBomb, index) => {
-                const tile = document.createElement('div');
-                tile.className = 'mines-tile';
-                tile.id = `minesTile-${index}`;
-                tile.onclick = () => clickTile(index);
-                
-                if (minesState.isGameActive && minesState.revealedCount > 0) {
-                     // Если игра активна, но клетка не раскрыта
-                } else if (!minesState.isGameActive && minesState.revealedCount > 0) {
-                    // Игра окончена (взрыв или кэшаут)
-                    if (isBomb) {
-                        tile.classList.add('bomb');
-                        tile.innerHTML = '<i class="fas fa-skull"></i>';
-                    } else if (tile.classList.contains('safe')) {
-                        // Уже раскрытые безопасные
-                        tile.innerHTML = '<i class="fas fa-star"></i>';
-                    } else {
-                        // Нераскрытые безопасные (потемнели)
-                        tile.classList.add('revealed');
-                        tile.classList.add('safe');
-                        tile.innerHTML = '<i class="fas fa-star"></i>';
-                        tile.style.opacity = 0.5;
-                    }
-                    tile.onclick = null;
-                }
-                
-                grid.appendChild(tile);
-            });
-
-            document.getElementById('minesCountDisplay').textContent = minesState.minesCount;
-            document.getElementById('minesMultiplier').textContent = `${minesState.currentMultiplier.toFixed(2)}x`;
-            document.getElementById('minesWin').textContent = `${(minesState.bet * minesState.currentMultiplier).toFixed(2)}`;
-
-            document.getElementById('gameControls').style.display = 'none';
-
-            // Управление кнопками
-            const playBtn = document.getElementById('playBtn');
-            const cashOutBtn = document.getElementById('minesCashOutBtn');
-            const minesControls = document.getElementById('minesControls');
-            
-            if (minesState.isGameActive) {
-                playBtn.style.display = 'none';
-                minesControls.style.pointerEvents = 'none';
-                minesControls.style.opacity = 0.7;
-                cashOutBtn.style.display = 'block';
-            } else {
-                playBtn.style.display = 'block';
-                playBtn.textContent = minesState.revealedCount > 0 ? 'НАЧАТЬ НОВУЮ ИГРУ' : 'ИГРАТЬ';
-                minesControls.style.pointerEvents = 'auto';
-                minesControls.style.opacity = 1;
-                cashOutBtn.style.display = 'none';
-            }
-        }
-
-
-        // ==================== ВЫВОД СРЕДСТВ ====================
-        async function submitWithdrawal() {
-            if (!currentUser) {
-                showNotification('Войдите в систему', 'error');
-                return;
-            }
-            const amount = parseInt(document.getElementById('withdrawAmount').value);
-            const card = document.getElementById('withdrawCard').value.trim().substring(0, 30);
-
-            if (amount < 1000 || amount > currentUser.balance) {
-                showNotification('Некорректная сумма вывода', 'error');
-                return;
-            }
-            if (!card) {
-                showNotification('Введите реквизиты', 'error');
-                return;
-            }
-
-            showLoader();
-            try {
-                // Запись заявки
-                const { error } = await supabase
-                    .from('withdrawals')
-                    .insert({ user_id: currentUser.id, amount, card_details: card, status: 'pending' });
-
-                if (error) throw error;
-
-                // Уменьшаем баланс
-                await updateBalance(-amount);
-
-                showNotification('Заявка на вывод принята в обработку!', 'success');
-                document.getElementById('withdrawAmount').value = '';
-                document.getElementById('withdrawCard').value = '';
-
-            } catch (error) {
-                console.error('Withdrawal error:', error);
-                showNotification('Ошибка при оформлении заявки', 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        // ==================== МОДАЛЬНЫЕ ОКНА И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-
-        function closeModal() {
-            document.getElementById('authModal').style.display = 'none';
-        }
-
-        function closeGameModal() {
-            document.getElementById('gameModal').style.display = 'none';
-            currentGame = null;
-            // Возвращаем Mines к дефолту, если она была открыта
-            minesState.isGameActive = false;
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').style.display = 'none';
-        }
-
-        function closeMessagesModal() {
-            document.getElementById('messagesModal').style.display = 'none';
-            currentChat = null;
-            document.getElementById('newMessage').disabled = true;
-            document.getElementById('sendMessageBtn').disabled = true;
-            document.getElementById('chatHeader').innerHTML = '<p style="color: var(--dark-text); text-align: center;">Выберите чат</p>';
-            document.getElementById('messagesList').innerHTML = '';
-        }
-
-        function showTerms() {
-            document.getElementById('termsModal').style.display = 'flex';
-        }
-
-        function closeTerms() {
-            document.getElementById('termsModal').style.display = 'none';
-        }
-
-        function showPrivacy() {
-            showNotification('Политика конфиденциальности доступна в пользовательском соглашении', 'info');
-        }
-
-        // Показать уведомление
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        // Показать загрузку
-        function showLoader() {
-            document.getElementById('loader').style.display = 'flex';
-        }
-
-        // Скрыть загрузку
-        function hideLoader() {
-            document.getElementById('loader').style.display = 'none';
-        }
-
-        // ==================== СООБЩЕНИЯ ====================
-
-        async function showMessages() {
-            if (!currentUser) {
-                showNotification('Войдите в систему', 'error');
-                return;
-            }
-            document.getElementById('messagesModal').style.display = 'flex';
-            await loadChats();
-        }
-        
-        // Загрузить чаты (логика для отображения последних собеседников)
-        async function loadChats() {
-            if (!currentUser) return;
-            try {
-                // Получаем все сообщения пользователя
-                const { data: messages, error } = await supabase
-                    .from('messages')
-                    .select(`
-                        *, 
-                        sender:users!messages_sender_id_fkey(id, username, avatar_url, avatar_color), 
-                        receiver:users!messages_receiver_id_fkey(id, username, avatar_url, avatar_color)
-                    `)
-                    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                // Группируем по собеседнику
-                const chats = {};
-                messages.forEach(msg => {
-                    const otherUser = msg.sender_id === currentUser.id ? msg.receiver : msg.sender;
-                    if (otherUser && !chats[otherUser.id]) {
-                        chats[otherUser.id] = {
-                            ...otherUser,
-                            lastMessage: msg.message,
-                            unread: msg.receiver_id === currentUser.id && !msg.is_read
-                        };
-                    }
-                });
-
-                const chatsList = document.getElementById('chatsList');
-                let chatsHtml = '';
-                
-                for (const userId in chats) {
-                    const chat = chats[userId];
-                    const isUnread = chat.unread ? 'border: 2px solid var(--warning);' : '';
-                    chatsHtml += `
-                        <div class="chat-item" onclick="openChat('${chat.id}', '${chat.username}')" 
-                             style="padding: 10px; margin-bottom: 8px; background: rgba(0, 255, 0, 0.05); border-radius: 8px; cursor: pointer; ${isUnread}">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 35px; height: 35px; background: ${chat.avatar_color || '#00ff00'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #000;">
-                                    ${chat.avatar_url ? `<img src="${chat.avatar_url}" class="user-avatar" style="width: 35px; height: 35px; border:none;">` : chat.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <div style="font-weight: bold; color: var(--light-text); font-size: 14px;">${chat.username}</div>
-                                    <div style="font-size: 12px; color: var(--dark-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px;">${chat.lastMessage}</div>
-                                </div>
-                                ${chat.unread ? '<span style="margin-left: auto; color: var(--warning);">• НОВОЕ</span>' : ''}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                if (chatsHtml) {
-                    chatsList.innerHTML = chatsHtml;
-                } else {
-                    chatsList.innerHTML = '<p style="color: var(--dark-text); text-align: center; padding: 40px 0;">У вас нет активных чатов. Воспользуйтесь поиском!</p>';
-                }
-
-            } catch (error) {
-                console.error('Ошибка загрузки чатов:', error);
-                showNotification('Ошибка загрузки чатов', 'error');
-            }
-        }
-        
-        // Поиск пользователей
-        async function searchUsers(query) {
-            if (!query || query.length < 2) {
-                await loadChats();
-                return;
-            }
-            try {
-                const { data: users, error } = await supabase
-                    .from('users')
-                    .select('id, username, avatar_url, avatar_color')
-                    .ilike('username', `%${query}%`)
-                    .neq('id', currentUser.id)
-                    .limit(10);
-
-                if (error) throw error;
-                
-                const chatsList = document.getElementById('chatsList');
-                if (users && users.length > 0) {
-                    const searchResults = users.map(user => `
-                        <div class="chat-item" onclick="openChat('${user.id}', '${user.username}')" 
-                             style="padding: 10px; margin-bottom: 8px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; cursor: pointer; border: 1px solid var(--info);">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 35px; height: 35px; background: ${user.avatar_color || '#00ff00'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #000;">
-                                    ${user.avatar_url ? `<img src="${user.avatar_url}" class="user-avatar" style="width: 35px; height: 35px; border:none;">` : user.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div style="font-weight: bold; color: var(--light-text); font-size: 14px;">${user.username}</div>
-                                <div style="margin-left: auto; font-size: 12px; color: var(--primary);"> Начать чат </div>
-                            </div>
-                        </div>
-                    `).join('');
-                    chatsList.innerHTML = searchResults;
-                } else {
-                    chatsList.innerHTML = '<p style="color: var(--dark-text); text-align: center; padding: 40px 0;">Пользователи не найдены.</p>';
-                }
-
-            } catch (error) {
-                console.error('Ошибка поиска пользователей:', error);
-            }
-        }
-
-        // Открыть чат
-        async function openChat(userId, username) {
-            currentChat = { id: userId, username };
-            document.getElementById('chatHeader').innerHTML = `
-                <div style="font-weight: bold; color: var(--primary); font-size: 18px; text-align: center; width: 100%;">Чат с ${username}</div>
-            `;
-            document.getElementById('newMessage').disabled = false;
-            document.getElementById('sendMessageBtn').disabled = false;
-            await loadMessages(userId);
-        }
-
-        // Загрузить сообщения
-        async function loadMessages(otherUserId) {
-            if (!currentUser) return;
-            try {
-                const { data: messages, error } = await supabase
-                    .from('messages')
-                    .select(`
-                        id, message, created_at, sender_id, receiver_id, is_read,
-                        sender:users!messages_sender_id_fkey(username, avatar_color)
-                    `)
-                    .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUser.id})`)
-                    .order('created_at', { ascending: true });
-
-                if (error) throw error;
-                
-                const messagesList = document.getElementById('messagesList');
-                messagesList.innerHTML = '';
-
-                if (messages && messages.length > 0) {
-                    const messagesHtml = messages.map(msg => {
-                        const isMine = msg.sender_id === currentUser.id;
-                        const bgColor = isMine ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
-                        const align = isMine ? 'flex-end' : 'flex-start';
-                        const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        
-                        return `
-                            <div style="display: flex; justify-content: ${align}; margin-bottom: 10px;">
-                                <div style="max-width: 80%; padding: 10px; border-radius: 10px; background: ${bgColor};">
-                                    <div style="font-weight: bold; color: ${isMine ? 'var(--primary)' : 'var(--info)'}; font-size: 12px; margin-bottom: 5px;">
-                                        ${isMine ? 'Вы' : msg.sender.username}
-                                    </div>
-                                    <p style="white-space: pre-wrap;">${msg.message}</p>
-                                    <div style="font-size: 10px; color: var(--dark-text); text-align: right; margin-top: 5px;">
-                                        ${time} ${isMine && msg.is_read ? '✓' : isMine ? '' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                    
-                    messagesList.innerHTML = messagesHtml;
-
-                    // Прокручиваем вниз
-                    messagesList.scrollTop = messagesList.scrollHeight;
-
-                    // Помечаем как прочитанные
-                    const unreadMessages = messages.filter(msg => msg.receiver_id === currentUser.id && !msg.is_read);
-                    for (const msg of unreadMessages) {
-                        await supabase
-                            .from('messages')
-                            .update({ is_read: true })
-                            .eq('id', msg.id);
-                    }
-                } else {
-                    messagesList.innerHTML = '<p style="color: var(--dark-text); text-align: center; padding: 40px 20px;">Нет сообщений. Начните общение!</p>';
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
-                showNotification('Ошибка загрузки сообщений', 'error');
-            }
-        }
-
-        // Отправить сообщение
-        async function sendMessage() {
-            if (!currentChat || !currentUser) return;
-            const messageInput = document.getElementById('newMessage');
-            const message = messageInput.value.trim();
-
-            if (!message) {
-                showNotification('Введите сообщение', 'error');
-                return;
-            }
-
-            try {
-                const { error } = await supabase
-                    .from('messages')
-                    .insert({ 
-                        sender_id: currentUser.id, 
-                        receiver_id: currentChat.id, 
-                        message: message 
-                    });
-
-                if (error) throw error;
-                
-                messageInput.value = '';
-                await loadMessages(currentChat.id);
-                await loadChats();
-
-            } catch (error) {
-                console.error('Ошибка отправки сообщения:', error);
-                showNotification('Ошибка отправки сообщения', 'error');
-            }
-        }
-
-        // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
-        
-        // Обработка нажатия ESC для закрытия модальных окон
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-                closeGameModal();
-                closeProfileModal();
-                closeMessagesModal();
-                closeTerms();
-            }
-        });
-        
-        // Закрытие модальных окон при клике вне их
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', function(event) {
-                if (event.target === this) {
-                    this.style.display = 'none';
                 }
             });
-        });
-        
-        // Обработка отправки сообщения по Enter
-        document.getElementById('newMessage')?.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
+
+            // Добавление обработчика для Plinko rows
+            document.getElementById('plinkoRows')?.addEventListener('change', drawPlinkoBoard);
         });
     </script>
 </body>
