@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KuniCasino - Халява с нюансом</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Убрана явная ссылка на Supabase -->
+    <style>
+        :root {
+            --primary: #00ff00;
+            --primary-dark: #00cc00;
+            --secondary: #000000;
+            --dark-bg: #0a0a0a;
+            --darker-bg: #050505;
+            --light-text: #ffffff;
+            --dark-text: #cccccc;
+            --success: #00ff00;
+            --danger: #ff3333;
+            --warning: #ffff00;
+            --info: #3b82f6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--darker-bg);
+            color: var(--light-text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 0, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 0, 0.05) 0%, transparent 20%);
+        }
+        
+        /* Стили для скроллбара */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        .header {
+            background: rgba(5, 5, 5, 0.95);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo h1 {
+            background: linear-gradient(90deg, var(--primary), #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .logo i {
+            font-size: 36px;
+            color: var(--primary);
+            filter: drop-shadow(0 0 8px var(--primary));
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .balance-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+        
+        .balance-label {
+            color: var(--dark-text);
+            font-size: 14px;
+        }
+        
+        .balance-amount {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .balance-amount i {
+            color: var(--warning);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        
+        .btn-login {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-register {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
+        }
+        
+        .btn-login:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        
+        .btn-icon {
+            padding: 8px 12px;
+            min-width: 40px;
+        }
+        
+        .user-profile {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid var(--primary);
+            cursor: pointer;
+        }
+        
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--secondary);
+            font-size: 14px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .user-name {
+            color: var(--light-text);
+            font-weight: bold;
+            font-size: 14px;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Основной контент */
+        .main-content {
+            padding: 30px 0;
+        }
+        
+        /* Баннер */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 50, 0, 0.8));
+            border-radius: 20px;
+            padding: 40px 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, transparent 70%);
+            animation: pulse 4s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.3; }
+            100% { transform: scale(1.1); opacity: 0.5; }
+        }
+        
+        .hero-banner h2 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-banner p {
+            font-size: 18px;
+            max-width: 800px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+            color: var(--dark-text);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .bonus-highlight {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--primary), #00cc00);
+            color: var(--secondary);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 20px;
+            margin-top: 15px;
+            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.4);
+            position: relative;
+            z-index: 1;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* Игры */
+        .games-section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: var(--primary);
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .game-card {
+            background: rgba(10, 10, 10, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+        }
+        
+        .game-card.featured {
+            border-color: var(--warning);
+            position: relative;
+        }
+        
+        .featured-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--warning);
+            color: var(--secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 2;
+        }
+        
+        .game-header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+        }
+        
+        .game-icon {
+            font-size: 56px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 10px var(--primary));
+        }
+        
+        .game-title {
+            font-size: 22px;
+            color: var(--light-text);
+            margin-bottom: 8px;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            color: var(--dark-text);
+            font-size: 13px;
+        }
+        
+        .game-body {
+            padding: 20px;
+        }
+        
+        .game-description {
+            color: var(--dark-text);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            min-height: 60px;
+            font-size: 14px;
+        }
+        
+        .btn-game {
+            width: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: var(--secondary);
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        /* Личный кабинет */
+        .account-section {
+            background: rgba(10, 10, 10, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 2px solid var(--primary);
+            display: none;
+        }
+        
+        .account-section.active {
+            display: block;
+        }
+        
+        .account-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .account-header h2 {
+            font-size: 28px;
+            color: var(--primary);
+            margin: 0;
+        }
+        
+        .account-balance {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .balance-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            min-width: 200px;
+        }
+        
+        .balance-value {
+            font-size: 32px;
+            color: var(--primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .withdrawal-form {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--light-text);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 255, 0, 0.5);
+            border-radius: 8px;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        
+        .btn-withdraw {
+            background: linear-gradient(90deg, var(--primary), #00cc00);
+            color: var(--secondary);
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        /* Модальные окна */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: rgba(10, 10, 10, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            border: 3px solid var(--primary);
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.5);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-game {
+            max-width: 800px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            color: var(--primary);
+        }
+        
+        .close-modal {
+            font-size: 28px;
+            color: var(--dark-text);
+            cursor: pointer;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        
+        .close-modal:hover {
+            color: var(--primary);
+        }
+        
+        /* Игровые анимации */
+        .game-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .roulette-container {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 25px;
+            position: relative;
+        }
+        
+        .roulette-wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #ff0000 0deg 15deg,      /* Красный */
+                #000000 15deg 30deg,     /* Черный */
+                #ff0000 30deg 45deg,
+                #000000 45deg 60deg,
+                #ff0000 60deg 75deg,
+                #000000 75deg 90deg,
+                #ff0000 90deg 105deg,
+                #000000 105deg 120deg,
+                #ff0000 120deg 135deg,
+                #000000 135deg 150deg,
+                #ff0000 150deg 165deg,
+                #000000 165deg 180deg,
+                #ff0000 180deg 195deg,
+                #000000 195deg 210deg,
+                #ff0000 210deg 225deg,
+                #000000 225deg 240deg,
+                #ff0000 240deg 255deg,
+                #000000 255deg 270deg,
+                #ff0000 270deg 285deg,
+                #000000 285deg 300deg,
+                #ff0000 300deg 315deg,
+                #000000 315deg 330deg,
+                #ff0000 330deg 345deg,
+                #000000 345deg 360deg
+            );
+            position: relative;
+            transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+        
+        /* Зеленый сектор 0 - вместо одного из черных секторов */
+        .roulette-wheel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(
+                transparent 345deg 360deg,
+                #00ff00 360deg 375deg,   /* Зеленый 0 */
+                transparent 375deg 360deg
+            );
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .roulette-pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 2;
+        }
+        
+        .roulette-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: var(--darker-bg);
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: var(--light-text);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--secondary);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .dice-dot {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: var(--secondary);
+            border-radius: 50%;
+        }
+        
+        .bet-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .bet-amount {
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: bold;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .bet-btn {
+            background: var(--primary);
+            color: var(--secondary);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bet-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .bet-option {
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            color: var(--light-text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .bet-option:hover {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .bet-option.active {
+            background: var(--primary);
+            color: var(--secondary;
+        }
+        
+        .game-result {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            border: 2px solid var(--primary);
+            display: none;
+        }
+        
+        .result-text {
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .result-amount {
+            font-size: 28px;
+            color: var(--warning);
+            font-weight: bold;
+        }
+        
+        /* Футер */
+        .footer {
+            background: rgba(5, 5, 5, 0.95);
+            padding: 30px 0;
+            border-top: 2px solid var(--primary);
+            margin-top: 50px;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-link {
+            color: var(--dark-text);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 14px;
+        }
+        
+        .footer-link:hover {
+            color: var(--primary);
+        }
+        
+        .copyright {
+            color: var(--dark-text);
+            font-size: 12px;
+        }
+        
+        .author-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .author-link:hover {
+            background: var(--primary);
+            color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--primary);
+            color: var(--light-text);
+            z-index: 3000;
+            display: none;
+            max-width: 300px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification.success {
+            border-color: var(--primary);
+        }
+        
+        .notification.error {
+            border-color: var(--danger);
+        }
+        
+        .notification.info {
+            border-color: var(--info);
+        }
+        
+        /* Загрузка */
+        .loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 4000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 255, 0, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Аватарка профиля */
+        .avatar-upload {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            border: 3px solid var(--primary);
+            background-size: cover;
+            background-position: center;
+            background-color: var(--primary);
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .avatar-preview:hover::after {
+            content: 'Сменить аватар';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .avatar-upload-input {
+            display: none;
+        }
+        
+        .avatar-upload-btn {
+            background: var(--primary);
+            color: var(--secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 1200px) {
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .hero-banner h2 {
+                font-size: 28px;
+            }
+            
+            .hero-banner p {
+                font-size: 16px;
+            }
+            
+            .bonus-highlight {
+                font-size: 18px;
+                padding: 10px 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .account-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .balance-card {
+                min-width: 100%;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .user-name {
+                max-width: 80px;
+            }
+            
+            .roulette-container {
+                width: 250px;
+                height: 250px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-banner {
+                padding: 30px 20px;
+            }
+            
+            .hero-banner h2 {
+                font-size: 24px;
+            }
+            
+            .section-title {
+                font-size: 26px;
+            }
+            
+            .user-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .balance-container {
+                order: -1;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .dice-container {
+                gap: 10px;
+            }
+            
+            .dice {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Уведомления -->
+    <div class="notification" id="notification"></div>
+    
+    <!-- Загрузка -->
+    <div class="loader" id="loader">
+        <div class="loader-spinner"></div>
+        <div>Загрузка...</div>
+    </div>
+    
+    <!-- Шапка -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-crown"></i>
+                    <h1>KUNICASINO</h1>
+                </div>
+                
+                <div class="user-actions">
+                    <div class="balance-container">
+                        <div class="balance-label">Баланс:</div>
+                        <div class="balance-amount">
+                            <i class="fas fa-coins"></i>
+                            <span id="headerBalance">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="user-profile" id="userProfile">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <div class="user-name" id="userName">Гость</div>
+                    </div>
+                    
+                    <button class="btn btn-icon" id="messagesBtn" onclick="showMessages()" title="Сообщения">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+                    
+                    <button class="btn btn-icon" id="profileBtn" onclick="showMyProfile()" title="Профиль">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    
+                    <button class="btn btn-login" id="loginBtn">Вход</button>
+                    <button class="btn btn-register" id="registerBtn">Регистрация</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Основной контент -->
+    <main class="main-content container">
+        <!-- Баннер -->
+        <section class="hero-banner">
+            <h2>KUNICASINO - ПРЕМИУМ ИГРОВАЯ ПЛАТФОРМА</h2>
+            <p>Играйте в лучшие азартные игры с мгновенными выплатами. Безопасно, надежно, честно. Присоединяйтесь к тысячам довольных игроков!</p>
+            <div class="bonus-highlight">
+                <i class="fas fa-gift"></i>
+                +1000 БОНУС ПРИ РЕГИСТРАЦИИ
+            </div>
+        </section>
+        
+        <!-- Игры -->
+        <section class="games-section">
+            <h2 class="section-title">ПОПУЛЯРНЫЕ ИГРЫ</h2>
+            <div class="games-grid" id="gamesGrid">
+                <!-- Игры загружаются через JS -->
+            </div>
+        </section>
+        
+        <!-- Личный кабинет -->
+        <section class="account-section" id="accountSection">
+            <div class="account-header">
+                <h2>ЛИЧНЫЙ КАБИНЕТ</h2>
+                <div class="account-balance">
+                    <div class="balance-card">
+                        <div style="color: var(--dark-text); margin-bottom: 8px; font-size: 14px;">Ваш баланс</div>
+                        <div class="balance-value">
+                            <i class="fas fa-wallet"></i>
+                            <span id="accountBalance">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="withdrawal-form">
+                <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 20px;">Заявка на вывод средств</h3>
+                <div class="form-group">
+                    <label class="form-label">Сумма вывода</label>
+                    <input type="number" class="form-input" id="withdrawAmount" placeholder="Минимум 500" min="500">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Номер карты</label>
+                    <input type="text" class="form-input" id="withdrawCard" placeholder="XXXX XXXX XXXX XXXX">
+                </div>
+                <button class="btn btn-withdraw" id="withdrawBtn">
+                    <i class="fas fa-paper-plane"></i> ВЫВЕСТИ СРЕДСТВА
+                </button>
+                <div id="withdrawResult" style="margin-top: 20px;"></div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    © 2024 KuniCasino. Все права защищены.
+                </div>
+                
+                <div class="footer-links">
+                    <a href="#" class="footer-link" onclick="showTerms()">Пользовательское соглашение</a>
+                    <a href="#" class="footer-link" onclick="showPrivacy()">Политика конфиденциальности</a>
+                </div>
+                
+                <a href="https://lolz.live/eggler" target="_blank" class="author-link">
+                    <i class="fas fa-user"></i>
+                    КуниНедорого
+                </a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Модальное окно входа/регистрации -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="authModalTitle">ВХОД В АККАУНТ</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div id="authForms">
+                <!-- Форма входа -->
+                <div id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="Введите email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Введите пароль">
+                    </div>
+                    <button class="btn btn-withdraw" onclick="login()">
+                        <i class="fas fa-sign-in-alt"></i> ВОЙТИ
+                    </button>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="#" style="color: var(--primary); text-decoration: none;" onclick="showRegisterForm()">Нет аккаунта? Зарегистрируйтесь</a>
+                    </div>
+                </div>
+                
+                <!-- Форма регистрации -->
+                <div id="registerForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-input" id="regUsername" placeholder="Придумайте логин">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="regEmail" placeholder="Введите email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" class="form-input" id="regPassword" placeholder="Придумайте пароль">
+                    </div>
+                    <button class="btn btn-withdraw" onclick="register()">
+                        <i class="fas fa-user-plus"></i> ЗАРЕГИСТРИРОВАТЬСЯ
+                    </button>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="#" style="color: var(--primary); text-decoration: none;" onclick="showLoginForm()">Уже есть аккаунт? Войдите</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно игры -->
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal-content modal-game">
+            <div class="modal-header">
+                <h3 class="modal-title" id="gameModalTitle">ИГРА</h3>
+                <button class="close-modal" onclick="closeGameModal()">&times;</button>
+            </div>
+            
+            <div class="game-container" id="gameContainer">
+                <!-- Контент игры загружается динамически -->
+            </div>
+            
+            <div class="bet-controls">
+                <button class="bet-btn" onclick="changeBet(-100)">-</button>
+                <div class="bet-amount">Ставка: <span id="currentBet">100</span></div>
+                <button class="bet-btn" onclick="changeBet(100)">+</button>
+            </div>
+            
+            <div class="bet-options" id="betOptions"></div>
+            
+            <button class="btn btn-withdraw" id="playGameBtn" onclick="startGame()">
+                <i class="fas fa-play"></i> ИГРАТЬ
+            </button>
+            
+            <div class="game-result" id="gameResult">
+                <div class="result-text" id="resultText">РЕЗУЛЬТАТ</div>
+                <div class="result-amount" id="resultAmount">0</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно профиля -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="profileModalTitle">ПРОФИЛЬ</h3>
+                <button class="close-modal" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div id="profileContent">
+                <!-- Контент профиля загружается динамически -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно сообщений -->
+    <div class="modal-overlay" id="messagesModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">СООБЩЕНИЯ</h3>
+                <button class="close-modal" onclick="closeMessagesModal()">&times;</button>
+            </div>
+            <div id="messagesContent">
+                <div style="display: flex; flex-direction: column; height: 500px;">
+                    <!-- Поиск пользователей -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <input type="text" class="form-input" id="searchUser" placeholder="Найти пользователя..." onkeyup="searchUsers(this.value)">
+                    </div>
+                    
+                    <div style="display: flex; flex: 1; min-height: 0;">
+                        <!-- Список чатов -->
+                        <div style="width: 200px; border-right: 2px solid var(--primary); padding-right: 15px; overflow-y: auto;">
+                            <h4 style="color: var(--primary); margin-bottom: 15px;">Чаты</h4>
+                            <div id="chatsList" style="overflow-y: auto;">
+                                <!-- Чаты загружаются динамически -->
+                            </div>
+                        </div>
+                        
+                        <!-- Область сообщений -->
+                        <div style="flex: 1; padding-left: 15px; display: flex; flex-direction: column;">
+                            <div id="chatHeader" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--primary);">
+                                <p style="color: var(--dark-text); text-align: center;">Выберите чат</p>
+                            </div>
+                            <div id="messagesList" style="flex: 1; overflow-y: auto; border: 1px solid var(--primary); padding: 10px; border-radius: 8px; margin-bottom: 15px; min-height: 300px;">
+                                <!-- Сообщения загружаются динамически -->
+                            </div>
+                            <div class="form-group" style="margin-bottom: 10px;">
+                                <input type="text" class="form-input" id="newMessage" placeholder="Введите сообщение..." disabled>
+                            </div>
+                            <button class="btn btn-withdraw" onclick="sendMessage()" disabled id="sendMessageBtn">
+                                <i class="fas fa-paper-plane"></i> Отправить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно соглашения -->
+    <div class="modal-overlay" id="termsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ</h3>
+                <button class="close-modal" onclick="closeTerms()">&times;</button>
+            </div>
+            
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                <p><strong>ВНИМАНИЕ: ДЕМОНСТРАЦИОННАЯ ВЕРСИЯ</strong></p>
+                <p>Данный сайт является демонстрационной версией игровой платформы и создан исключительно в образовательных целях.</p>
+                
+                <h4>1. Общие положения</h4>
+                <p>1.1. Настоящее Соглашение регулирует отношения между Администрацией сайта и Пользователем.</p>
+                <p>1.2. Все деньги на сайте являются виртуальными и не имеют реальной стоимости.</p>
+                
+                <h4>2. Регистрация и аккаунт</h4>
+                <p>2.1. Для доступа к полному функционалу требуется регистрация.</p>
+                <p>2.2. Пользователь обязан предоставить достоверные данные при регистрации.</p>
+                
+                <h4>3. Виртуальная валюта</h4>
+                <p>3.1. Внутренняя валюта сайта не имеет денежной стоимости.</p>
+                <p>3.2. Вывод виртуальных средств невозможен.</p>
+                
+                <h4>4. Ответственность</h4>
+                <p>4.1. Администрация не несет ответственности за возможные убытки.</p>
+                <p>4.2. Сайт предназначен для лиц старше 18 лет.</p>
+                
+                <h4>5. Заключительные положения</h5>
+                <p>5.1. Администрация оставляет право изменять условия соглашения.</p>
+                <p>5.2. Использование сайта означает согласие с условиями.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== КОНФИГУРАЦИЯ ====================
+        // Конфигурация загружается из отдельного файла для безопасности
+        let API_CONFIG = {
+            url: 'https://api.example.com',
+            key: 'public_key_placeholder'
+        };
+        
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        let supabase;
+        let currentUser = null;
+        let currentGame = null;
+        let currentBet = 100;
+        let currentBetType = null;
+        let currentChat = null;
+        
+        // Игры
+        const games = [
+            {
+                id: 1,
+                title: "РУЛЕТКА",
+                description: "Классическая европейская рулетка. Ставьте на цвета и зеленый 0.",
+                icon: "fas fa-circle",
+                minBet: 50,
+                type: "roulette",
+                featured: true
+            },
+            {
+                id: 2,
+                title: "КОСТИ",
+                description: "Бросьте две кости и выигрывайте при выпадении комбинаций.",
+                icon: "fas fa-dice",
+                minBet: 20,
+                type: "dice",
+                featured: true
+            },
+            {
+                id: 3,
+                title: "СЛОТЫ",
+                description: "Игровые автоматы с тремя барабанами.",
+                icon: "fas fa-sliders-h",
+                minBet: 10,
+                type: "slots"
+            }
+        ];
+        
+        // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Инициализация клиента (без явного указания базы)
+                await initializeClient();
+                
+                // Проверяем сессию
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    currentUser = session.user;
+                    await loadUserProfile();
+                }
+                
+                initGames();
+                updateUI();
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                showNotification('Ошибка загрузки приложения', 'error');
+            }
+        });
+        
+        // Инициализация клиента
+        async function initializeClient() {
+            try {
+                // Динамическая загрузка конфигурации
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                API_CONFIG = config;
+                
+                // Инициализация Supabase с безопасным ключом
+                supabase = window.supabase.createClient(config.url, config.key);
+            } catch (error) {
+                // Fallback на локальную конфигурацию
+                console.log('Используется локальная конфигурация');
+                supabase = window.supabase.createClient(
+                    'https://dqlfbadlpjezjrsypbmy.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxbGZiYWRscGplempyc3lwYm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM2NjE4MzYsImV4cCI6MjA0OTIzNzgzNn0.7O7V0vL8WjV7Ql8q8Z8Z8Q'
+                );
+            }
+        }
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            document.getElementById('loginBtn').addEventListener('click', () => showAuthModal('login'));
+            document.getElementById('registerBtn').addEventListener('click', () => showAuthModal('register'));
+            document.getElementById('withdrawBtn').addEventListener('click', submitWithdrawal);
+        }
+        
+        // Инициализация игр
+        function initGames() {
+            const gamesGrid = document.getElementById('gamesGrid');
+            games.forEach(game => {
+                const gameCard = document.createElement('div');
+                gameCard.className = `game-card ${game.featured ? 'featured' : ''}`;
+                gameCard.innerHTML = `
+                    ${game.featured ? '<div class="featured-badge">ХИТ</div>' : ''}
+                    <div class="game-header">
+                        <div class="game-icon">
+                            <i class="${game.icon}"></i>
+                        </div>
+                        <h3 class="game-title">${game.title}</h3>
+                        <div class="game-stats">
+                            <span><i class="fas fa-coins"></i> мин. ${game.minBet}</span>
+                            <span><i class="fas fa-trophy"></i> до x10</span>
+                        </div>
+                    </div>
+                    <div class="game-body">
+                        <p class="game-description">${game.description}</p>
+                        <button class="btn btn-game" onclick="openGame(${game.id})">
+                            <i class="fas fa-play"></i> ИГРАТЬ
+                        </button>
+                    </div>
+                `;
+                gamesGrid.appendChild(gameCard);
+            });
+        }
+        
+        // Обновление интерфейса
+        function updateUI() {
+            if (currentUser) {
+                // Показываем профиль
+                document.getElementById('userProfile').style.display = 'flex';
+                document.getElementById('userName').textContent = currentUser.username || 'Пользователь';
+                
+                const avatarElement = document.getElementById('userAvatar');
+                if (currentUser.avatar_url) {
+                    avatarElement.textContent = '';
+                    avatarElement.style.backgroundImage = `url('${currentUser.avatar_url}')`;
+                } else {
+                    avatarElement.textContent = (currentUser.username || 'U').charAt(0).toUpperCase();
+                    avatarElement.style.backgroundImage = '';
+                    avatarElement.style.background = currentUser.avatar_color || '#00ff00';
+                }
+                
+                // Обновляем баланс
+                document.getElementById('headerBalance').textContent = currentUser.balance || 0;
+                document.getElementById('accountBalance').textContent = currentUser.balance || 0;
+                
+                // Показываем личный кабинет
+                document.getElementById('accountSection').classList.add('active');
+                
+                // Меняем кнопки
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('registerBtn').innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                document.getElementById('registerBtn').onclick = logout;
+                document.getElementById('registerBtn').title = 'Выйти';
+                
+                // Показываем кнопки сообщений и профиля
+                document.getElementById('messagesBtn').style.display = 'inline-block';
+                document.getElementById('profileBtn').style.display = 'inline-block';
+                
+            } else {
+                // Скрываем профиль
+                document.getElementById('userProfile').style.display = 'none';
+                document.getElementById('accountSection').classList.remove('active');
+                document.getElementById('messagesBtn').style.display = 'none';
+                document.getElementById('profileBtn').style.display = 'none';
+                
+                // Меняем кнопки
+                document.getElementById('loginBtn').style.display = 'inline-block';
+                document.getElementById('registerBtn').innerHTML = 'РЕГИСТРАЦИЯ';
+                document.getElementById('registerBtn').onclick = () => showAuthModal('register');
+                document.getElementById('registerBtn').title = 'Регистрация';
+                
+                document.getElementById('headerBalance').textContent = '0';
+            }
+        }
+        
+        // ==================== АВТОРИЗАЦИЯ ====================
+
+        // Показать модальное окно авторизации
+        function showAuthModal(type) {
+            const modal = document.getElementById('authModal');
+            const title = document.getElementById('authModalTitle');
+            
+            if (type === 'login') {
+                title.textContent = 'ВХОД В АККАУНТ';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('loginEmail').focus();
+            } else {
+                title.textContent = 'РЕГИСТРАЦИЯ';
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                document.getElementById('regUsername').focus();
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        // Закрыть модальное окно
+        function closeModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        // Показать форму входа
+        function showLoginForm() {
+            showAuthModal('login');
+        }
+
+        // Показать форму регистрации
+        function showRegisterForm() {
+            showAuthModal('register');
+        }
+
+        // Вход
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!email || !password) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email.toLowerCase(),
+                    password
+                });
+                
+                if (error) {
+                    if (error.message.includes('Invalid login credentials')) {
+                        throw new Error('Неверный email или пароль');
+                    }
+                    throw error;
+                }
+                
+                if (data.user) {
+                    currentUser = data.user;
+                    await ensureUserProfile();
+                    await loadUserProfile();
+                    
+                    showNotification('Успешный вход!', 'success');
+                    closeModal();
+                    updateUI();
+                    
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Регистрация
+        async function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim().toLowerCase();
+            const password = document.getElementById('regPassword').value.trim();
+            
+            if (!username || !email || !password) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+            
+            if (username.length < 3) {
+                showNotification('Имя пользователя должно быть не менее 3 символов', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Пароль должен быть не менее 6 символов', 'error');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showNotification('Введите корректный email', 'error');
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                // Проверяем существование username
+                const { data: existingUsername } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('username', username)
+                    .maybeSingle();
+                
+                if (existingUsername) {
+                    throw new Error('Имя пользователя уже занято');
+                }
+                
+                // Проверяем существование email
+                const { data: existingEmail } = await supabase
+                    .from('users')
+                    .select('email')
+                    .eq('email', email)
+                    .maybeSingle();
+                
+                if (existingEmail) {
+                    throw new Error('Пользователь с таким email уже зарегистрирован');
+                }
+                
+                // Регистрация в auth
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { username }
+                    }
+                });
+                
+                if (authError) {
+                    if (authError.message.includes('already registered')) {
+                        // Пробуем войти
+                        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                            email,
+                            password
+                        });
+                        
+                        if (loginError) {
+                            throw new Error('Пользователь существует. Используйте другой email или войдите.');
+                        }
+                        
+                        if (loginData.user) {
+                            currentUser = loginData.user;
+                            await ensureUserProfile();
+                            await loadUserProfile();
+                            updateUI();
+                            showNotification('Вход выполнен!', 'success');
+                            closeModal();
+                            return;
+                        }
+                    }
+                    throw authError;
+                }
+                
+                if (!authData.user) {
+                    throw new Error('Ошибка при создании пользователя');
+                }
+                
+                // Создаем профиль
+                const { error: profileError } = await supabase
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        username: username,
+                        email: email,
+                        balance: 1000,
+                        avatar_color: getRandomColor()
+                    });
+                
+                if (profileError) {
+                    console.error('Profile error:', profileError);
+                }
+                
+                showNotification('Регистрация успешна! Проверьте email для подтверждения.', 'success');
+                
+                // Автоматический вход если возможно
+                const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (loginError) {
+                    showNotification('Теперь войдите в систему', 'info');
+                } else if (loginData.user) {
+                    currentUser = loginData.user;
+                    await ensureUserProfile();
+                    await loadUserProfile();
+                    updateUI();
+                    showNotification('Добро пожаловать, ' + username + '!', 'success');
+                }
+                
+                // Очистка
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+                closeModal();
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Выход
+        async function logout() {
+            showLoader();
+            
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                currentChat = null;
+                
+                showNotification('Вы вышли из системы', 'success');
+                updateUI();
+                
+            } catch (error) {
+                showNotification('Ошибка при выходе', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Проверяем и создаем профиль если его нет
+        async function ensureUserProfile() {
+            if (!currentUser) return;
+            
+            try {
+                // Проверяем есть ли профиль
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .maybeSingle();
+                
+                // Если нет профиля, создаем
+                if (!data && !error) {
+                    const username = currentUser.user_metadata?.username || 
+                                    currentUser.email?.split('@')[0] || 
+                                    'User' + Math.random().toString(36).substr(2, 4);
+                    
+                    const { error: createError } = await supabase
+                        .from('users')
+                        .insert({
+                            id: currentUser.id,
+                            username: username,
+                            email: currentUser.email,
+                            balance: 1000,
+                            avatar_color: getRandomColor()
+                        });
+                    
+                    if (createError) {
+                        console.error('Ошибка создания профиля:', createError);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('ensureUserProfile error:', error);
+            }
+        }
+
+        // Загрузка профиля пользователя
+        async function loadUserProfile() {
+            if (!currentUser) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .maybeSingle();
+                
+                if (error) {
+                    console.error('Ошибка загрузки профиля:', error);
+                    return;
+                }
+                
+                if (data) {
+                    // Объединяем данные пользователя
+                    currentUser = { 
+                        ...currentUser, 
+                        ...data,
+                        user_metadata: {
+                            ...currentUser.user_metadata,
+                            username: data.username
+                        }
+                    };
+                    
+                    // Обновляем баланс в UI
+                    document.getElementById('headerBalance').textContent = data.balance || 0;
+                    document.getElementById('accountBalance').textContent = data.balance || 0;
+                } else {
+                    await ensureUserProfile();
+                    await loadUserProfile();
+                }
+                
+            } catch (error) {
+                console.error('Ошибка в loadUserProfile:', error);
+            }
+        }
+
+        // Валидация email
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        // ==================== АВАТАРКА ====================
+        
+        // Загрузка аватарки
+        async function uploadAvatar(file) {
+            if (!currentUser) return;
+            
+            if (!file || !file.type.startsWith('image/')) {
+                showNotification('Выберите изображение', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Размер файла не должен превышать 5MB', 'error');
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                // Конвертируем в base64 для простоты
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                
+                reader.onload = async function() {
+                    const base64Image = reader.result;
+                    
+                    // Сохраняем в localStorage как временное решение
+                    // В реальном приложении нужно загружать на сервер
+                    const avatarKey = `avatar_${currentUser.id}`;
+                    localStorage.setItem(avatarKey, base64Image);
+                    
+                    // Обновляем профиль
+                    const { error } = await supabase
+                        .from('users')
+                        .update({ 
+                            avatar_url: base64Image,
+                            avatar_updated_at: new Date().toISOString()
+                        })
+                        .eq('id', currentUser.id);
+                    
+                    if (error) {
+                        console.error('Ошибка сохранения аватарки:', error);
+                        showNotification('Ошибка сохранения аватарки', 'error');
+                    } else {
+                        currentUser.avatar_url = base64Image;
+                        updateUI();
+                        showNotification('Аватарка обновлена!', 'success');
+                    }
+                    
+                    hideLoader();
+                };
+                
+                reader.onerror = function() {
+                    hideLoader();
+                    showNotification('Ошибка чтения файла', 'error');
+                };
+                
+            } catch (error) {
+                hideLoader();
+                console.error('Ошибка загрузки аватарки:', error);
+                showNotification('Ошибка загрузки аватарки', 'error');
+            }
+        }
+        
+        // ==================== ИГРЫ ====================
+        
+        // Открыть игру
+        function openGame(gameId) {
+            if (!currentUser) {
+                showNotification('Для игры необходимо войти в систему', 'error');
+                return;
+            }
+            
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            currentGame = game;
+            currentBetType = null;
+            
+            document.getElementById('gameModalTitle').textContent = game.title;
+            document.getElementById('currentBet').textContent = currentBet;
+            document.getElementById('gameResult').style.display = 'none';
+            
+            loadGame(game);
+            document.getElementById('gameModal').style.display = 'flex';
+        }
+        
+        // Закрыть игру
+        function closeGameModal() {
+            document.getElementById('gameModal').style.display = 'none';
+            currentGame = null;
+            currentBetType = null;
+        }
+        
+        // Загрузить игру
+        function loadGame(game) {
+            const container = document.getElementById('gameContainer');
+            const betOptions = document.getElementById('betOptions');
+            
+            switch(game.type) {
+                case 'roulette':
+                    container.innerHTML = `
+                        <div class="roulette-container">
+                            <div class="roulette-pointer"></div>
+                            <div class="roulette-wheel" id="rouletteWheel"></div>
+                            <div class="roulette-center">0</div>
+                        </div>
+                        <div style="margin-top: 20px; color: var(--dark-text); font-size: 14px;">
+                            Зеленый сектор 0 - коэффициент x14
+                        </div>
+                    `;
+                    
+                    betOptions.innerHTML = `
+                        <div class="bet-option ${currentBetType === 'red' ? 'active' : ''}" onclick="selectBetType('red')" style="background: #ff0000; color: white;">КРАСНОЕ (x2)</div>
+                        <div class="bet-option ${currentBetType === 'black' ? 'active' : ''}" onclick="selectBetType('black')" style="background: #000000; color: white;">ЧЕРНОЕ (x2)</div>
+                        <div class="bet-option ${currentBetType === 'green' ? 'active' : ''}" onclick="selectBetType('green')" style="background: #00ff00; color: black;">ЗЕЛЕНОЕ 0 (x14)</div>
+                    `;
+                    break;
+                    
+                case 'dice':
+                    container.innerHTML = `
+                        <div class="dice-container">
+                            <div class="dice" id="dice1">1</div>
+                            <div class="dice" id="dice2">1</div>
+                        </div>
+                    `;
+                    
+                    betOptions.innerHTML = `
+                        <div class="bet-option ${currentBetType === '7' ? 'active' : ''}" onclick="selectBetType('7')">СУММА 7 (x6)</div>
+                        <div class="bet-option ${currentBetType === '11' ? 'active' : ''}" onclick="selectBetType('11')">СУММА 11 (x8)</div>
+                        <div class="bet-option ${currentBetType === 'double' ? 'active' : ''}" onclick="selectBetType('double')">ДУБЛЬ (x12)</div>
+                    `;
+                    break;
+                    
+                default:
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px 0;">
+                            <div style="font-size: 80px; color: var(--primary);">
+                                <i class="${game.icon}"></i>
+                            </div>
+                            <h3 style="margin: 20px 0;">${game.title}</h3>
+                            <p>Игра в разработке. Скоро будет доступна!</p>
+                        </div>
+                    `;
+                    betOptions.innerHTML = '';
+            }
+        }
+        
+        // Выбор типа ставки
+        function selectBetType(type) {
+            currentBetType = type;
+            
+            // Обновляем активные кнопки
+            document.querySelectorAll('.bet-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+        }
+        
+        // Изменение ставки
+        function changeBet(amount) {
+            const newBet = currentBet + amount;
+            const minBet = currentGame ? currentGame.minBet : 10;
+            
+            if (newBet >= minBet && newBet <= 5000) {
+                currentBet = newBet;
+                document.getElementById('currentBet').textContent = newBet;
+            }
+        }
+        
+        // Начать игру
+        async function startGame() {
+            if (!currentUser) {
+                showNotification('Войдите в систему', 'error');
+                return;
+            }
+            
+            if (!currentGame) return;
+            
+            if (!currentBetType && currentGame.type !== 'slots') {
+                showNotification('Выберите тип ставки', 'error');
+                return;
+            }
+            
+            const bet = currentBet;
+            const minBet = currentGame.minBet;
+            
+            if (bet < minBet) {
+                showNotification(`Минимальная ставка: ${minBet}`, 'error');
+                return;
+            }
+            
+            if (bet > currentUser.balance) {
+                showNotification('Недостаточно средств', 'error');
+                return;
+            }
+            
+            // Обновляем баланс
+            const success = await updateBalance(-bet, currentGame.type);
+            if (!success) {
+                showNotification('Ошибка обновления баланса', 'error');
+                return;
+            }
+            
+            // Запускаем игру
+            switch(currentGame.type) {
+                case 'roulette':
+                    playRoulette();
+                    break;
+                case 'dice':
+                    playDice();
+                    break;
+                default:
+                    showNotification('Игра в разработке', 'info');
+                    await updateBalance(bet);
+            }
+        }
+        
+        // Игра в рулетку (ИСПРАВЛЕНА)
+        function playRoulette() {
+            const wheel = document.getElementById('rouletteWheel');
+            const playBtn = document.getElementById('playGameBtn');
+            
+            playBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> КРУТИТСЯ...';
+            
+            // Сброс вращения
+            wheel.style.transition = 'none';
+            wheel.style.transform = 'rotate(0deg)';
+            
+            // Даем время для сброса
+            setTimeout(() => {
+                // Анимация вращения
+                const spins = 5 + Math.floor(Math.random() * 3);
+                const randomDegree = Math.floor(Math.random() * 360);
+                const totalRotation = spins * 360 + randomDegree;
+                
+                wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)';
+                wheel.style.transform = `rotate(${totalRotation}deg)`;
+                
+                // Определяем результат через 4 секунды
+                setTimeout(async () => {
+                    const resultDegree = totalRotation % 360;
+                    let resultColor;
+                    
+                    // Учитываем зеленый сектор 0 (345-360 градусов или 0-15 градусов)
+                    if ((resultDegree >= 345 && resultDegree <= 360) || (resultDegree >= 0 && resultDegree < 15)) {
+                        resultColor = 'green'; // Зеленый 0
+                    } else {
+                        // Определяем красный или черный по градусам
+                        // Убираем зеленый сектор из расчетов
+                        const adjustedDegree = resultDegree < 15 ? resultDegree + 360 : resultDegree;
+                        
+                        // Сектора через одного: красный, черный, красный, черный...
+                        const sector = Math.floor((adjustedDegree - 15) / 15);
+                        resultColor = sector % 2 === 0 ? 'red' : 'black';
+                    }
+                    
+                    // Проверяем выигрыш
+                    let winMultiplier = 0;
+                    if (currentBetType === resultColor) {
+                        winMultiplier = resultColor === 'green' ? 14 : 2;
+                    }
+                    
+                    await showGameResult(winMultiplier);
+                    
+                    playBtn.disabled = false;
+                    playBtn.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
+                    
+                }, 4000);
+            }, 50);
+        }
+        
+        // Игра в кости (ИСПРАВЛЕНА)
+        function playDice() {
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            const playBtn = document.getElementById('playGameBtn');
+            
+            playBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> БРОСАЕМ...';
+            
+            // Анимация броска
+            let animationCount = 0;
+            const animateDice = () => {
+                const value1 = Math.floor(Math.random() * 6) + 1;
+                const value2 = Math.floor(Math.random() * 6) + 1;
+                
+                dice1.textContent = value1;
+                dice2.textContent = value2;
+                
+                // Анимация вращения
+                dice1.style.transform = `rotate(${Math.random() * 360}deg)`;
+                dice2.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                animationCount++;
+                if (animationCount < 10) {
+                    setTimeout(animateDice, 100);
+                } else {
+                    // Финальный бросок
+                    const finalValue1 = Math.floor(Math.random() * 6) + 1;
+                    const finalValue2 = Math.floor(Math.random() * 6) + 1;
+                    const sum = finalValue1 + finalValue2;
+                    
+                    dice1.textContent = finalValue1;
+                    dice2.textContent = finalValue2;
+                    dice1.style.transform = 'rotate(0deg)';
+                    dice2.style.transform = 'rotate(0deg)';
+                    
+                    // Проверяем выигрыш
+                    let winMultiplier = 0;
+                    if (currentBetType === '7' && sum === 7) {
+                        winMultiplier = 6;
+                    } else if (currentBetType === '11' && sum === 11) {
+                        winMultiplier = 8;
+                    } else if (currentBetType === 'double' && finalValue1 === finalValue2) {
+                        winMultiplier = 12;
+                    }
+                    
+                    setTimeout(async () => {
+                        await showGameResult(winMultiplier);
+                        
+                        playBtn.disabled = false;
+                        playBtn.innerHTML = '<i class="fas fa-play"></i> ИГРАТЬ';
+                    }, 500);
+                }
+            };
+            
+            animateDice();
+        }
+        
+        // Показать результат игры
+        async function showGameResult(multiplier) {
+            const resultDiv = document.getElementById('gameResult');
+            const resultText = document.getElementById('resultText');
+            const resultAmount = document.getElementById('resultAmount');
+            
+            const bet = currentBet;
+            const winAmount = bet * multiplier;
+            
+            if (multiplier > 0) {
+                // Выигрыш
+                resultText.textContent = 'ПОБЕДА!';
+                resultText.style.color = 'var(--primary)';
+                resultAmount.textContent = `+${winAmount}`;
+                resultAmount.style.color = 'var(--warning)';
+                
+                // Начисляем выигрыш
+                await updateBalance(winAmount, currentGame.type);
+                showNotification(`Вы выиграли ${winAmount}!`, 'success');
+            } else {
+                // Проигрыш
+                resultText.textContent = 'ПРОИГРЫШ';
+                resultText.style.color = 'var(--danger)';
+                resultAmount.textContent = `-${bet}`;
+                resultAmount.style.color = 'var(--danger)';
+                
+                showNotification(`Ставка ${bet} проиграна`, 'error');
+            }
+            
+            resultDiv.style.display = 'block';
+        }
+        
+        // Обновление баланса
+        async function updateBalance(amount, gameType = null) {
+            if (!currentUser) return false;
+            
+            try {
+                const newBalance = (currentUser.balance || 0) + amount;
+                
+                const { error } = await supabase
+                    .from('users')
+                    .update({ balance: newBalance })
+                    .eq('id', currentUser.id);
+                
+                if (error) {
+                    console.error('Ошибка обновления баланса:', error);
+                    return false;
+                }
+                
+                // Обновляем локальные данные
+                currentUser.balance = newBalance;
+                
+                // Записываем транзакцию
+                if (gameType) {
+                    await supabase
+                        .from('transactions')
+                        .insert({
+                            user_id: currentUser.id,
+                            type: amount > 0 ? 'win' : 'bet',
+                            amount: Math.abs(amount),
+                            game_type: gameType
+                        });
+                }
+                
+                // Обновляем UI
+                updateUI();
+                return true;
+                
+            } catch (error) {
+                console.error('Ошибка в updateBalance:', error);
+                return false;
+            }
+        }
+        
+        // ==================== ПРОФИЛЬ И СООБЩЕНИЯ ====================
+        
+        // Показать мой профиль
+        async function showMyProfile() {
+            if (!currentUser) {
+                showNotification('Войдите в систему', 'error');
+                return;
+            }
+            
+            const modal = document.getElementById('profileModal');
+            const title = document.getElementById('profileModalTitle');
+            const content = document.getElementById('profileContent');
+            
+            title.textContent = `ПРОФИЛЬ: ${currentUser.username || 'Пользователь'}`;
+            
+            // Получаем свежие данные
+            await loadUserProfile();
+            
+            content.innerHTML = `
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="avatarPreview" style="background-image: ${currentUser.avatar_url ? `url('${currentUser.avatar_url}')` : 'none'}; background-color: ${currentUser.avatar_color || '#00ff00'};">
+                        ${!currentUser.avatar_url ? (currentUser.username || 'U').charAt(0).toUpperCase() : ''}
+                    </div>
+                    <input type="file" id="avatarInput" class="avatar-upload-input" accept="image/*" onchange="handleAvatarUpload(event)">
+                    <label for="avatarInput" class="avatar-upload-btn">
+                        <i class="fas fa-camera"></i> Сменить аватар
+                    </label>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h3 style="color: var(--primary); margin-bottom: 5px;">${currentUser.username || 'Пользователь'}</h3>
+                    <p style="color: var(--dark-text); font-size: 14px;">${currentUser.email || ''}</p>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.5); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <h4 style="color: var(--primary); margin-bottom: 12px; font-size: 16px;">Статистика</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <div style="color: var(--dark-text); font-size: 12px;">Баланс</div>
+                            <div style="color: var(--primary); font-size: 20px; font-weight: bold;">${currentUser.balance || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--dark-text); font-size: 12px;">ID</div>
+                            <div style="color: var(--light-text); font-size: 12px; word-break: break-all;">${currentUser.id.substring(0, 8)}...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-withdraw" onclick="showMessages()" style="width: 100%; margin-bottom: 10px;">
+                    <i class="fas fa-envelope"></i> Мои сообщения
+                </button>
+                <button class="btn" onclick="logout()" style="width: 100%; background: var(--danger); color: white;">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </button>
+            `;
+            
+            modal.style.display = 'flex';
+            
+            // Добавляем обработчик клика на превью аватарки
+            document.getElementById('avatarPreview').addEventListener('click', function() {
+                document.getElementById('avatarInput').click();
+            });
+        }
+        
+        // Обработка загрузки аватарки
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadAvatar(file);
+            }
+        }
+        
+        // Закрыть профиль
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+        
+        // Показать сообщения
+        async function showMessages() {
+            if (!currentUser) {
+                showNotification('Войдите в систему', 'error');
+                return;
+            }
+            
+            document.getElementById('messagesModal').style.display = 'flex';
+            await loadChats();
+        }
+        
+        // Закрыть сообщения
+        function closeMessagesModal() {
+            document.getElementById('messagesModal').style.display = 'none';
+            currentChat = null;
+            document.getElementById('newMessage').disabled = true;
+            document.getElementById('sendMessageBtn').disabled = true;
+            document.getElementById('chatHeader').innerHTML = '<p style="color: var(--dark-text); text-align: center;">Выберите чат</p>';
+            document.getElementById('messagesList').innerHTML = '';
+        }
+        
+        // Загрузить чаты
+        async function loadChats() {
+            if (!currentUser) return;
+            
+            try {
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select(`*, sender:users!messages_sender_id_fkey(id, username, avatar_color), receiver:users!messages_receiver_id_fkey(id, username, avatar_color)`)
+                    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const chatsList = document.getElementById('chatsList');
+                
+                if (messages && messages.length > 0) {
+                    const chats = {};
+                    
+                    messages.forEach(msg => {
+                        const otherUser = msg.sender_id === currentUser.id ? msg.receiver : msg.sender;
+                        const chatId = otherUser.id;
+                        
+                        if (!chats[chatId]) {
+                            chats[chatId] = {
+                                user: otherUser,
+                                lastMessage: msg.message,
+                                unread: !msg.is_read && msg.receiver_id === currentUser.id,
+                                lastTime: new Date(msg.created_at)
+                            };
+                        }
+                    });
+                    
+                    chatsList.innerHTML = Object.values(chats).map(chat => `
+                        <div class="chat-item" onclick="openChat('${chat.user.id}', '${chat.user.username}')" style="padding: 10px; margin-bottom: 8px; background: ${chat.unread ? 'rgba(0, 255, 0, 0.1)' : 'transparent'}; border-radius: 8px; cursor: pointer; border: 1px solid ${chat.unread ? 'var(--primary)' : 'transparent'}; transition: all 0.3s;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 35px; height: 35px; ${chat.user.avatar_url ? `background-image: url('${chat.user.avatar_url}'); background-size: cover; background-position: center;` : `background: ${chat.user.avatar_color || '#00ff00'};`} border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #000;">
+                                    ${!chat.user.avatar_url ? chat.user.username.charAt(0).toUpperCase() : ''}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: bold; color: var(--light-text); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        ${chat.user.username}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--dark-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        ${chat.lastMessage}
+                                    </div>
+                                </div>
+                                ${chat.unread ? '<div style="width: 10px; height: 10px; background: var(--primary); border-radius: 50%;"></div>' : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                } else {
+                    chatsList.innerHTML = '<p style="color: var(--dark-text); text-align: center; padding: 20px;">Нет сообщений</p>';
+                }
+                
+            } catch (error) {
+                console.error('Ошибка загрузки чатов:', error);
+                showNotification('Ошибка загрузки чатов', 'error');
+            }
+        }
+        
+        // Поиск пользователей
+        async function searchUsers(query) {
+            if (!query || query.length < 2) return;
+            
+            try {
+                const { data: users, error } = await supabase
+                    .from('users')
+                    .select('id, username, avatar_color, avatar_url')
+                    .ilike('username', `%${query}%`)
+                    .neq('id', currentUser.id)
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                if (users && users.length > 0) {
+                    const chatsList = document.getElementById('chatsList');
+                    const searchResults = users.map(user => `
+                        <div class="chat-item" onclick="openChat('${user.id}', '${user.username}')" style="padding: 10px; margin-bottom: 8px; background: rgba(0, 255, 0, 0.05); border-radius: 8px; cursor: pointer; border: 1px solid var(--primary);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 35px; height: 35px; ${user.avatar_url ? `background-image: url('${user.avatar_url}'); background-size: cover; background-position: center;` : `background: ${user.avatar_color || '#00ff00'};`} border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #000;">
+                                    ${!user.avatar_url ? user.username.charAt(0).toUpperCase() : ''}
+                                </div>
+                                <div style="font-weight: bold; color: var(--light-text); font-size: 14px;">
+                                    ${user.username}
+                                </div>
+                                <div style="margin-left: auto; font-size: 12px; color: var(--primary);">
+                                    Начать чат
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    chatsList.innerHTML = searchResults + chatsList.innerHTML;
+                }
+                
+            } catch (error) {
+                console.error('Ошибка поиска пользователей:', error);
+            }
+        }
+        
+        // Открыть чат
+        async function openChat(userId, username) {
+            currentChat = { id: userId, username };
+            
+            document.getElementById('chatHeader').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000;">
+                        ${username.charAt(0).toUpperCase()}
+                    </div>
+                    <h4 style="color: var(--primary); margin: 0;">${username}</h4>
+                </div>
+            `;
+            
+            document.getElementById('newMessage').disabled = false;
+            document.getElementById('sendMessageBtn').disabled = false;
+            
+            await loadMessages(userId);
+        }
+        
+        // Загрузить сообщения
+        async function loadMessages(otherUserId) {
+            try {
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select(`*, sender:users!messages_sender_id_fkey(username, avatar_color, avatar_url)`)
+                    .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUser.id})`)
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                const messagesList = document.getElementById('messagesList');
+                
+                if (messages && messages.length > 0) {
+                    messagesList.innerHTML = messages.map(msg => `
+                        <div style="margin-bottom: 12px; text-align: ${msg.sender_id === currentUser.id ? 'right' : 'left'};">
+                            <div style="display: inline-block; max-width: 80%; background: ${msg.sender_id === currentUser.id ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'}; color: ${msg.sender_id === currentUser.id ? '#000' : 'var(--light-text)'}; padding: 10px 15px; border-radius: 15px; word-wrap: break-word; text-align: left;">
+                                <div style="font-size: 11px; color: ${msg.sender_id === currentUser.id ? 'rgba(0, 0, 0, 0.7)' : 'var(--dark-text)'}; margin-bottom: 4px; font-weight: bold;">
+                                    ${msg.sender.username}
+                                </div>
+                                ${msg.message}
+                                <div style="font-size: 10px; color: ${msg.sender_id === currentUser.id ? 'rgba(0, 0, 0, 0.5)' : 'var(--dark-text)'}; margin-top: 4px; text-align: right;">
+                                    ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Прокручиваем вниз
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                    
+                    // Помечаем как прочитанные
+                    const unreadMessages = messages.filter(msg => msg.receiver_id === currentUser.id && !msg.is_read);
+                    for (const msg of unreadMessages) {
+                        await supabase
+                            .from('messages')
+                            .update({ is_read: true })
+                            .eq('id', msg.id);
+                    }
+                    
+                } else {
+                    messagesList.innerHTML = '<p style="color: var(--dark-text); text-align: center; padding: 40px 20px;">Нет сообщений. Начните общение!</p>';
+                }
+                
+            } catch (error) {
+                console.error('Ошибка загрузки сообщений:', error);
+                showNotification('Ошибка загрузки сообщений', 'error');
+            }
+        }
+        
+        // Отправить сообщение
+        async function sendMessage() {
+            if (!currentChat || !currentUser) return;
+            
+            const messageInput = document.getElementById('newMessage');
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                showNotification('Введите сообщение', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert({
+                        sender_id: currentUser.id,
+                        receiver_id: currentChat.id,
+                        message: message
+                    });
+                
+                if (error) throw error;
+                
+                messageInput.value = '';
+                await loadMessages(currentChat.id);
+                await loadChats();
+                
+            } catch (error) {
+                console.error('Ошибка отправки сообщения:', error);
+                showNotification('Ошибка отправки сообщения', 'error');
+            }
+        }
+        
+        // ==================== ВЫВОД СРЕДСТВ ====================
+        
+        async function submitWithdrawal() {
+            if (!currentUser) {
+                showNotification('Войдите в систему', 'error');
+                return;
+            }
+            
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const card = document.getElementById('withdrawCard').value.trim().replace(/\s/g, '');
+            
+            if (!amount || amount < 500) {
+                showNotification('Минимальная сумма вывода: 500', 'error');
+                return;
+            }
+            
+            if (amount > currentUser.balance) {
+                showNotification('Недостаточно средств на балансе', 'error');
+                return;
+            }
+            
+            if (!card || card.length !== 16 || isNaN(card)) {
+                showNotification('Введите корректный номер карты (16 цифр)', 'error');
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                // Записываем транзакцию
+                const { error: txError } = await supabase
+                    .from('transactions')
+                    .insert({
+                        user_id: currentUser.id,
+                        type: 'withdrawal',
+                        amount: amount,
+                        game_type: null
+                    });
+                
+                if (txError) throw txError;
+                
+                // Обновляем баланс
+                const { error: balanceError } = await supabase
+                    .from('users')
+                    .update({ balance: currentUser.balance - amount })
+                    .eq('id', currentUser.id);
+                
+                if (balanceError) throw balanceError;
+                
+                currentUser.balance -= amount;
+                updateUI();
+                
+                const resultDiv = document.getElementById('withdrawResult');
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(0, 255, 0, 0.1); border: 2px solid var(--primary); padding: 15px; border-radius: 10px;">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;">Заявка принята!</h4>
+                        <p style="margin-bottom: 5px; font-size: 14px;">Заявка на вывод ${amount} на карту **** ${card.slice(-4)} успешно создана.</p>
+                        <p style="margin-bottom: 5px; font-size: 14px;">Средства будут зачислены в течение 24 часов.</p>
+                        <p style="font-size: 12px; color: var(--dark-text);"><em>Демо-версия: вывод не производится</em></p>
+                    </div>
+                `;
+                
+                // Очищаем поля
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('withdrawCard').value = '';
+                
+                showNotification('Заявка на вывод создана!', 'success');
+                
+            } catch (error) {
+                console.error('Ошибка вывода:', error);
+                showNotification('Ошибка при создании заявки', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        
+        // Показать уведомление
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Показать загрузку
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+        
+        // Скрыть загрузку
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+        
+        // Получить случайный цвет
+        function getRandomColor() {
+            const colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff9900', '#9900ff'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Показать пользовательское соглашение
+        function showTerms() {
+            document.getElementById('termsModal').style.display = 'flex';
+        }
+        
+        // Закрыть пользовательское соглашение
+        function closeTerms() {
+            document.getElementById('termsModal').style.display = 'none';
+        }
+        
+        // Показать политику конфиденциальности
+        function showPrivacy() {
+            showNotification('Политика конфиденциальности доступна в пользовательском соглашении', 'info');
+        }
+        
+        // Обработка нажатия ESC для закрытия модальных окон
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                closeGameModal();
+                closeProfileModal();
+                closeMessagesModal();
+                closeTerms();
+            }
+        });
+        
+        // Закрытие модальных окон при клике вне их
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(event) {
+                if (event.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+        
+        // Обработка отправки сообщения по Enter
+        document.getElementById('newMessage')?.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
