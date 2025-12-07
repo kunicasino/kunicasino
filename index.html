@@ -20,7 +20,7 @@
             --danger: #ff3333;
             --warning: #ffff00;
             --info: #3b82f6;
-            --green-roulette: #00cc00; /* Новый цвет */
+            --green-roulette: #00cc00;
         }
         
         * {
@@ -658,6 +658,31 @@
             border-radius: 50%;
         }
         
+        /* Стили для игры Mines */
+        .mine-cell {
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.7); 
+            border: 1px solid var(--primary); 
+            border-radius: 5px; 
+            cursor: pointer; 
+            color: var(--light-text); 
+            font-size: 20px; 
+            transition: background 0.2s, transform 0.1s; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            padding: 0;
+        }
+
+        .mine-cell:not([disabled]):hover {
+            background: rgba(0, 255, 0, 0.4);
+        }
+        
+        .mine-cell[disabled] {
+            cursor: default;
+        }
+        
         .bet-controls {
             display: flex;
             justify-content: center;
@@ -1251,12 +1276,21 @@
         let currentBetType = null;
         let currentChat = null;
 
+        // Глобальное состояние для игры Mines
+        let minesState = {
+            grid: [], // 5x5 grid containing true (Mine) or false (Safe)
+            minesCount: 3, // Default number of mines
+            safeClicks: 0,
+            bet: 0,
+            isGameActive: false
+        };
+
         const games = [
             { id: 0, title: 'Roulette', icon: 'fas fa-dice-d20', minBet: 10, featured: true, description: 'Угадай цвет и умножь свой баланс! Включает красное, черное и зеленое.' },
             { id: 1, title: 'Dice', icon: 'fas fa-dice', minBet: 10, featured: false, description: 'Брось две кости и угадай сумму или дубль для крупного выигрыша.' },
             { id: 2, title: 'Crash', icon: 'fas fa-rocket', minBet: 10, featured: false, description: 'Следи за ракетой и успей вывести ставку до падения!' },
             { id: 3, title: 'Plinko', icon: 'fas fa-chevron-down', minBet: 10, featured: false, description: 'Запусти шарик и поймай максимальный множитель.' },
-            { id: 4, title: 'Mines', icon: 'fas fa-bomb', minBet: 10, featured: true, description: 'Открывай ячейки, избегая мин, и забирай выигрыш.' },
+            { id: 4, title: 'Mines', icon: 'fas fa-bomb', minBet: 10, featured: true, description: 'Открывай ячейки, избегая мин, и забирай выигрыш. (Игра типа Chicken Road)' },
         ];
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
@@ -2113,7 +2147,33 @@
                     `;
                     playBtn.innerHTML = '<i class="fas fa-play"></i> БРОСИТЬ';
                     break;
-                default: // Other games (Crash, Plinko, Mines)
+                case 4: // Mines (Chicken Road)
+                    container.innerHTML = `
+                        <div style="text-align: left; max-width: 400px; margin: 0 auto 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Количество мин (сложность):</label>
+                                <input type="number" class="form-input" id="minesCountInput" min="1" max="24" value="3" onchange="updateMinesControls()">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <p>Текущий множитель: <strong id="minesMultiplierDisplay">x1.00</strong></p>
+                                <p>Возможный выигрыш: <strong id="minesPayoutDisplay">0</strong></p>
+                            </div>
+                            <button class="btn" id="minesCashOutBtn" onclick="cashOutMines()" disabled style="width: 100%; background: var(--warning); color: var(--secondary); margin-bottom: 10px;">
+                                <i class="fas fa-cash-register"></i> ЗАБРАТЬ
+                            </button>
+                        </div>
+                        <div id="minesGridContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 350px; height: 350px; margin: 0 auto; border: 2px solid var(--primary); padding: 5px; border-radius: 10px;">
+                            </div>
+                    `;
+                    betOptions.innerHTML = ''; // No external bet options
+                    playBtn.innerHTML = '<i class="fas fa-play"></i> НАЧАТЬ ИГРУ';
+                    playBtn.onclick = playMines;
+                    
+                    // Initial setup
+                    document.getElementById('minesCountInput').value = minesState.minesCount;
+                    resetMinesGame(true); // Draw initial grid
+                    break;
+                default: // Other games (Crash, Plinko)
                     container.innerHTML = `
                         <div style="text-align: center; padding: 40px 0;">
                             <div style="font-size: 80px; color: var(--primary);">
@@ -2133,6 +2193,10 @@
         }
 
         function closeGameModal() {
+            // При закрытии модального окна сбрасываем состояние Mines, если игра была активна
+            if (currentGame && currentGame.id === 4 && minesState.isGameActive) {
+                endMinesGame(false); // Заканчиваем игру проигрышем, если пользователь вышел
+            }
             document.getElementById('gameModal').style.display = 'none';
         }
         
@@ -2163,6 +2227,10 @@
             }
             
             document.getElementById('currentBetAmount').textContent = currentBet;
+            
+            if (currentGame && currentGame.id === 4) {
+                updateMinesControls();
+            }
         }
 
         // Начать игру
@@ -2171,7 +2239,7 @@
                 showNotification('Войдите, чтобы играть', 'error');
                 return;
             }
-            if (currentGame.id !== 2 && currentGame.id !== 3 && currentGame.id !== 4 && !currentBetType) { // Проверяем ставку только для реализованных
+            if (currentGame.id !== 4 && !currentBetType) { // Проверяем ставку только для рулетки/костей
                 showNotification('Выберите тип ставки', 'error');
                 return;
             }
@@ -2189,32 +2257,271 @@
                 playRoulette();
             } else if (currentGame.id === 1) {
                 playDice();
+            } else if (currentGame.id === 4) {
+                playMines();
             }
         }
         
+        // ==================== ЛОГИКА MINES (CHICKEN ROAD) ====================
+
+        // Reset function to draw the empty grid
+        function resetMinesGame(initial = false) {
+            minesState.isGameActive = false;
+            minesState.safeClicks = 0;
+            minesState.bet = 0;
+            
+            const gridContainer = document.getElementById('minesGridContainer');
+            if (!gridContainer) {
+                 if (initial) updateMinesControls(); // Обновляем контролы даже без контейнера при первом запуске
+                 return;
+            }
+            
+            // Загружаем сетку с пустыми кнопками
+            gridContainer.innerHTML = Array(25).fill(0).map((_, index) => `
+                <button class="mine-cell" data-index="${index}" disabled 
+                    style="width: 100%; height: 100%;">
+                    <i class="fas fa-question"></i>
+                </button>
+            `).join('');
+
+            // Устанавливаем обработчики кликов (даже если disabled, чтобы сохранить ссылку на элемент)
+            document.querySelectorAll('.mine-cell').forEach(cell => {
+                cell.onclick = (e) => clickGridCell(
+                    Math.floor(parseInt(e.target.dataset.index) / 5), 
+                    parseInt(e.target.dataset.index) % 5,
+                    e.target
+                );
+            });
+            
+            // Reset controls UI
+            document.getElementById('minesCountInput').disabled = false;
+            document.getElementById('minesCashOutBtn').disabled = true;
+            updateMinesControls();
+        }
+
+        function updateMinesControls() {
+            const input = document.getElementById('minesCountInput');
+            if (input) {
+                let mines = parseInt(input.value);
+                if (isNaN(mines) || mines < 1) mines = 1;
+                if (mines > 24) mines = 24;
+                input.value = mines;
+                minesState.minesCount = mines;
+            }
+            
+            const bet = minesState.isGameActive ? minesState.bet : currentBet;
+            const safeClicks = minesState.safeClicks;
+            const multiplier = safeClicks > 0 ? getMinesMultiplier(safeClicks, minesState.minesCount) : 1.00;
+            
+            const multiplierDisplay = document.getElementById('minesMultiplierDisplay');
+            const payoutDisplay = document.getElementById('minesPayoutDisplay');
+            const playBtn = document.getElementById('playGameBtn');
+            const cashOutBtn = document.getElementById('minesCashOutBtn');
+
+            if (multiplierDisplay) multiplierDisplay.textContent = `x${multiplier.toFixed(2)}`;
+            const cashOutAmount = (bet * multiplier).toFixed(0);
+            if (payoutDisplay) payoutDisplay.textContent = cashOutAmount;
+            
+            if (minesState.isGameActive) {
+                if (safeClicks > 0) {
+                     if (cashOutBtn) cashOutBtn.innerHTML = `<i class="fas fa-cash-register"></i> ЗАБРАТЬ ${cashOutAmount}`;
+                     if (cashOutBtn) cashOutBtn.disabled = false;
+                     if (playBtn) playBtn.style.display = 'none'; 
+                } else {
+                     if (cashOutBtn) cashOutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выберите ячейку';
+                     if (cashOutBtn) cashOutBtn.disabled = true;
+                     if (playBtn) playBtn.style.display = 'none';
+                }
+            } else {
+                if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i> НАЧАТЬ ИГРУ';
+                if (playBtn) playBtn.onclick = playMines;
+                if (playBtn) playBtn.disabled = currentBet > (currentUser ? currentUser.balance : 0);
+                if (playBtn) playBtn.style.display = 'block';
+                if (cashOutBtn) cashOutBtn.style.display = 'none';
+            }
+        }
+
+        // Calculates the multiplier based on the probability of safe clicks
+        function getMinesMultiplier(safeClicks, minesCount) {
+            if (safeClicks === 0) return 1.00;
+
+            let multiplier = 1.00;
+            const totalCells = 25;
+            
+            for (let i = 0; i < safeClicks; i++) {
+                // Probability of hitting a safe cell on click (i + 1)
+                const safeCellsRemaining = totalCells - minesCount - i;
+                const totalRemaining = totalCells - i;
+                
+                // Inverse of the probability of hitting a safe cell (which is the multiplier)
+                if (safeCellsRemaining <= 0) return 0; // Should not happen if game loop is correct
+                multiplier *= (totalRemaining / safeCellsRemaining);
+            }
+            return multiplier;
+        }
+
+
+        // Start the game session
+        async function playMines() {
+            if (!currentUser) return showNotification('Войдите, чтобы играть', 'error');
+            if (currentBet > currentUser.balance) return showNotification('Недостаточно средств', 'error');
+            
+            minesState.bet = currentBet;
+            minesState.safeClicks = 0;
+            minesState.isGameActive = true;
+
+            // 1. Снимаем ставку
+            await updateBalance(-minesState.bet); 
+
+            // 2. Генерируем поле с минами
+            minesState.grid = generateMinesGrid(minesState.minesCount);
+            
+            // 3. Активируем клетки и скрываем кнопку Play
+            document.getElementById('minesCountInput').disabled = true;
+            document.getElementById('playGameBtn').style.display = 'none';
+            document.getElementById('minesCashOutBtn').style.display = 'block';
+            
+            document.querySelectorAll('.mine-cell').forEach(cell => {
+                cell.disabled = false;
+            });
+            
+            updateMinesControls();
+            showNotification(`Игра началась! Ставка: ${minesState.bet}`, 'info');
+        }
+
+        // Generate the randomized grid
+        function generateMinesGrid(minesCount) {
+            let grid = Array(25).fill(false); // All safe initially
+            
+            // Choose N unique random indices for mines
+            const mineIndices = [];
+            while (mineIndices.length < minesCount) {
+                const randomIndex = Math.floor(Math.random() * 25);
+                if (!mineIndices.includes(randomIndex)) {
+                    mineIndices.push(randomIndex);
+                }
+            }
+            
+            // Place mines (true)
+            mineIndices.forEach(index => {
+                grid[index] = true;
+            });
+            
+            return grid;
+        }
+
+        // Handle cell click
+        function clickGridCell(row, col, cellElement) {
+            if (!minesState.isGameActive || cellElement.disabled) return;
+
+            const index = row * 5 + col;
+            const isMine = minesState.grid[index];
+
+            cellElement.disabled = true;
+            
+            if (isMine) {
+                // MINE HIT: Loss, end game
+                cellElement.style.background = 'var(--danger)';
+                cellElement.innerHTML = '<i class="fas fa-bomb"></i>';
+                
+                showNotification('ПОРАЖЕНИЕ! Наступили на мину.', 'error');
+                endMinesGame(false);
+
+            } else {
+                // SAFE SPOT: Increase multiplier
+                minesState.safeClicks++;
+                cellElement.style.background = 'var(--primary-dark)';
+                cellElement.innerHTML = '<i class="fas fa-star"></i>';
+                
+                updateMinesControls();
+                
+                // Check if all safe cells are clicked
+                if (minesState.safeClicks === 25 - minesState.minesCount) {
+                     showNotification('ПОЗДРАВЛЯЕМ! Вы открыли все безопасные ячейки!', 'success');
+                     cashOutMines(); // Auto cash out at max
+                }
+                
+            }
+        }
+
+        // Cash Out
+        async function cashOutMines() {
+            if (!minesState.isGameActive || minesState.safeClicks === 0) return;
+            
+            const multiplier = getMinesMultiplier(minesState.safeClicks, minesState.minesCount);
+            const winAmount = minesState.bet * multiplier;
+            const netWin = winAmount - minesState.bet;
+            
+            // 1. Добавляем выигрыш (включая ставку)
+            await updateBalance(winAmount);
+            
+            // 2. Показываем результат
+            showNotification(`ВЫИГРЫШ! Забрано x${multiplier.toFixed(2)}`, 'success');
+            endMinesGame(true, netWin, multiplier);
+        }
+
+        // End Game
+        function endMinesGame(isWin, netWin = 0, multiplier = 1.00) {
+            minesState.isGameActive = false;
+            
+            // Открываем все оставшиеся ячейки
+            document.querySelectorAll('.mine-cell').forEach((cell, index) => {
+                const isMine = minesState.grid[index];
+                const isClicked = cell.disabled;
+                
+                cell.disabled = true;
+                
+                if (!isClicked) {
+                    if (isMine) {
+                        cell.style.background = 'rgba(255, 0, 0, 0.4)';
+                        cell.innerHTML = '<i class="fas fa-bomb"></i>';
+                    } else {
+                        cell.style.background = 'rgba(0, 255, 0, 0.2)';
+                        cell.innerHTML = '<i class="fas fa-star"></i>';
+                    }
+                }
+            });
+
+            const resultDiv = document.getElementById('gameResult');
+            const resultText = document.getElementById('resultText');
+            const resultAmount = document.getElementById('resultAmount');
+            
+            if (isWin) {
+                resultText.textContent = `ВЫИГРЫШ! x${multiplier.toFixed(2)} `;
+                resultAmount.textContent = `+${netWin.toFixed(0)} монет`;
+                resultDiv.style.borderColor = 'var(--primary)';
+                resultText.style.color = 'var(--primary)';
+                resultAmount.style.color = 'var(--warning)';
+            } else {
+                resultText.textContent = `ПОРАЖЕНИЕ.`;
+                resultAmount.textContent = `-${minesState.bet} монет`;
+                resultDiv.style.borderColor = 'var(--danger)';
+                resultText.style.color = 'var(--danger)';
+                resultAmount.style.color = 'var(--danger)';
+            }
+            resultDiv.style.display = 'block';
+            
+            // Сбрасываем игру через небольшую паузу
+            setTimeout(() => {
+                document.getElementById('gameResult').style.display = 'none';
+                resetMinesGame(true);
+            }, 4000);
+        }
+
         // ==================== ЛОГИКА РУЛЕТКИ (Roulette) ====================
         
         // Определяет цвет по градусу
         function getRouletteResult(degree) {
-            // Зеленый: 0-15° (1 сектор)
-            // Красный: 15-30°, 45-60°, 75-90°, 105-120°, 135-150°, 165-180°, 195-210°, 225-240°, 255-270°, 285-300°, 315-330°, 345-360° (12 секторов)
-            // Черный: 30-45°, 60-75°, 90-105°, 120-135°, 150-165°, 180-195°, 210-225°, 240-255°, 270-285°, 300-315°, 330-345° (11 секторов)
-            
-            // В нашем CSS Green - это 0-15.
+            // ... (Логика рулетки без изменений)
             if (degree >= 0 && degree < 15) return 'green'; 
             
-            // Красный и Черный чередуются, начиная с Красного (15-30)
             const angleFromZero = degree % 360;
             const sectorSize = 15;
             const sectorIndex = Math.floor(angleFromZero / sectorSize);
             
-            // Секторы: 0=Green, 1=Black, 2=Red, 3=Black, 4=Red, 5=Black, ...
-            
-            if (sectorIndex === 0) return 'green'; // 0-15
-            
-            if (sectorIndex % 2 === 1) return 'black'; // 1, 3, 5, 7, ...
-            
-            return 'red'; // 2, 4, 6, 8, ...
+            if (sectorIndex === 0) return 'green';
+            if (sectorIndex % 2 === 1) return 'black';
+            return 'red';
         }
 
         async function playRoulette() {
@@ -2222,32 +2529,24 @@
             const playBtn = document.getElementById('playGameBtn');
             playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> КРУТИМ...';
 
-            // 1. Снимаем ставку
             await updateBalance(-currentBet);
 
-            // 2. Определяем результат (от 0 до 359 градусов)
             const resultDegree = Math.floor(Math.random() * 360);
             
-            // 3. Вычисляем вращение
-            const totalRotations = 10; // 10 полных оборотов
+            const totalRotations = 10;
             const rotation = totalRotations * 360; 
-            
-            // Финальная позиция: Вращение + (360 - resultDegree)
-            // Мы вращаем колесо, чтобы resultDegree оказался под статической стрелкой (0 градусов сверху).
             
             wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)';
             wheel.style.transform = `rotate(${rotation + (360 - resultDegree)}deg)`;
 
-            // 4. Проверяем результат после анимации
             setTimeout(async () => {
                 const finalColor = getRouletteResult(resultDegree);
 
-                // Проверяем выигрыш
                 let winMultiplier = 0;
                 if (currentBetType === finalColor) {
                     if (finalColor === 'green') {
                         winMultiplier = 14;
-                    } else { // Red or Black (x2)
+                    } else {
                         winMultiplier = 2;
                     }
                 }
@@ -2256,7 +2555,7 @@
                 playBtn.disabled = false;
                 playBtn.innerHTML = '<i class="fas fa-play"></i> КРУТИТЬ';
                 
-            }, 4000); // Задержка равна времени анимации
+            }, 4000);
         }
         
         // ==================== ЛОГИКА КОСТЕЙ (Dice) ====================
@@ -2268,10 +2567,8 @@
             const dice1 = document.getElementById('dice1');
             const dice2 = document.getElementById('dice2');
 
-            // 1. Снимаем ставку
             await updateBalance(-currentBet);
             
-            // 2. Анимация броска
             let rollCount = 0;
             const interval = setInterval(() => {
                 const val1 = Math.floor(Math.random() * 6) + 1;
@@ -2279,19 +2576,16 @@
                 updateDiceFace(dice1, val1);
                 updateDiceFace(dice2, val2);
                 rollCount++;
-                if (rollCount > 10) { // 10 быстрых смен
+                if (rollCount > 10) {
                     clearInterval(interval);
                     
-                    // 3. Определение окончательного результата
                     const value1 = Math.floor(Math.random() * 6) + 1;
                     const value2 = Math.floor(Math.random() * 6) + 1;
                     const sum = value1 + value2;
 
-                    // Отображение финального результата
                     updateDiceFace(dice1, value1);
                     updateDiceFace(dice2, value2);
                     
-                    // 4. Проверяем выигрыш
                     let winMultiplier = 0;
                     if (currentBetType === '7' && sum === 7) {
                         winMultiplier = 6;
@@ -2305,7 +2599,7 @@
                     playBtn.disabled = false;
                     playBtn.innerHTML = '<i class="fas fa-play"></i> БРОСИТЬ';
                 }
-            }, 100); // Быстрое обновление для имитации броска
+            }, 100);
         }
         
         // Обновить отображение кости
@@ -2331,28 +2625,32 @@
                     dice.appendChild(dot);
                 });
             } else {
-                 dice.textContent = value; // На случай ошибки
+                 dice.textContent = value;
             }
         }
         
-        // Показать результат игры
+        // Показать результат игры (для Рулетки/Костей)
         async function showGameResult(multiplier) {
+            // Если активно Mines, то используем его endMinesGame, иначе стандартный вывод
+            if (currentGame && currentGame.id === 4) return;
+            
             const resultDiv = document.getElementById('gameResult');
             const resultText = document.getElementById('resultText');
             const resultAmount = document.getElementById('resultAmount');
             
             const bet = currentBet;
             const winAmount = bet * multiplier;
+            const netWin = winAmount - bet;
 
             if (multiplier > 0) {
                 // Выигрыш
                 resultText.textContent = `ВЫИГРЫШ! Множитель: x${multiplier}`;
-                resultAmount.textContent = `+${winAmount} монет`;
+                resultAmount.textContent = `+${netWin} монет`;
                 resultDiv.style.borderColor = 'var(--primary)';
                 resultText.style.color = 'var(--primary)';
                 resultAmount.style.color = 'var(--warning)';
-                await updateBalance(winAmount);
-                showNotification(`ВЫИГРЫШ! +${winAmount} монет`, 'success');
+                await updateBalance(winAmount); // Добавляем только чистый выигрыш, так как ставка уже снята
+                showNotification(`ВЫИГРЫШ! +${netWin} монет`, 'success');
             } else {
                 // Проигрыш
                 resultText.textContent = `ПРОИГРЫШ.`;
